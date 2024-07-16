@@ -1,4 +1,4 @@
-#include "ukeysequence.h"
+#include "include/ukeysequence.h"
 
 #include <QDebug>
 

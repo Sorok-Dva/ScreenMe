@@ -61,9 +61,21 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <LibraryPath>.\lib;$(LibraryPath);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <LibraryPath>.\lib;$(LibraryPath);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Link>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Link>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="Configuration">
     <ClCompile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -93,9 +105,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-<<<<<<< HEAD
-    <QtMoc Include="main.cpp">
-=======
     <ClCompile Include="src\main_window.cpp" />
     <ClCompile Include="src\screenshotdisplay.cpp" />
     <ClCompile Include="src\uexception.cpp" />
@@ -103,20 +112,17 @@
     <ClCompile Include="src\ukeysequence.cpp" />
     <ClCompile Include="src\utils.cpp" />
     <ClCompile Include="main.cpp">
->>>>>>> 2c1818f (wip: global hotkeys)
       <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">input</DynamicSource>
       <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Filename).moc</QtMocFileName>
       <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Release|x64'">input</DynamicSource>
       <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename).moc</QtMocFileName>
-    </QtMoc>
+    </ClCompile>
     <ClCompile Include="src\config_manager.cpp" />
     <ClCompile Include="src\editor_window.cpp" />
     <ClCompile Include="src\options_window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\config_manager.h" />
-<<<<<<< HEAD
-=======
     <QtMoc Include="include\screenshotdisplay.h" />
     <ClInclude Include="include\hotkeymap.h" />
     <QtMoc Include="include\main_window.h" />
@@ -125,12 +131,12 @@
     <ClInclude Include="include\uglobal.h" />
     <QtMoc Include="include\uglobalhotkeys.h" />
     <ClInclude Include="include\utils.h" />
->>>>>>> 2c1818f (wip: global hotkeys)
     <QtMoc Include="include\options_window.h" />
     <QtMoc Include="include\editor_window.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\config.json" />
+    <None Include="ScreenMe.pro" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="resources\icon.png" />

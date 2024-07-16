@@ -1,4 +1,4 @@
-#include "uexception.h"
+#include "include/uexception.h"
 
 UException::UException(const QString& message) throw()
     : Message(message.toLocal8Bit())

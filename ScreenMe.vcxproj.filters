@@ -32,13 +32,8 @@
     <ClCompile Include="src\options_window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="include\config_manager.h">
+    <ClCompile Include="src\screenshotdisplay.cpp">
       <Filter>Source Files</Filter>
-<<<<<<< HEAD
-    </ClInclude>
-=======
     </ClCompile>
     <ClCompile Include="src\utils.cpp">
       <Filter>Source Files</Filter>
@@ -58,17 +53,19 @@
     <ClCompile Include="src\uglobalhotkeys.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
->>>>>>> 2c1818f (wip: global hotkeys)
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="include\editor_window.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="include\options_window.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="main.cpp">
-      <Filter>Source Files</Filter>
+    <QtMoc Include="include\screenshotdisplay.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="include\main_window.h">
+      <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="include\ukeysequence.h">
       <Filter>Header Files</Filter>
@@ -79,16 +76,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\config.json">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ScreenMe.pro">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resources\icon.png">
-      <Filter>Source Files</Filter>
+      <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
-<<<<<<< HEAD
-=======
   <ItemGroup>
     <ClInclude Include="include\config_manager.h">
       <Filter>Header Files</Filter>
@@ -106,5 +104,4 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
->>>>>>> 2c1818f (wip: global hotkeys)
 </Project>
