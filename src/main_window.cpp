@@ -1,7 +1,9 @@
 #include "include/main_window.h"
+#include "include/utils.h"
 #include <QScreen>
 #include <QGuiApplication>
 #include <QPixmap>
+#include <QJsonObject>
 #include <QDebug>
 #include "include/screenshotdisplay.h"
 #include "include/utils.h"
@@ -31,6 +33,7 @@ MainWindow::MainWindow(ConfigManager* configManager, QWidget* parent)
 }
 
 void MainWindow::takeScreenshot() {
+    qDebug() << "takeScreenshot";
     if (isScreenshotDisplayed) return;
 
     QScreen* screen = QGuiApplication::primaryScreen();
@@ -39,7 +42,9 @@ void MainWindow::takeScreenshot() {
         return;
     }
     QPixmap originalPixmap = screen->grabWindow(0);
-    displayScreenshotOnScreen(originalPixmap);
+    ScreenshotDisplay* display = new ScreenshotDisplay(originalPixmap);
+    connect(display, &ScreenshotDisplay::screenshotClosed, this, &MainWindow::handleScreenshotClosed);
+    display->show();
     isScreenshotDisplayed = true;
 }
 

@@ -11,7 +11,8 @@
 
 OptionsWindow::OptionsWindow(ConfigManager* configManager, QWidget* parent)
     : QDialog(parent), configManager(configManager), hotkeyEditing(nullptr) {
-    setWindowTitle("Options");
+    setWindowTitle("ScreenMe Options");
+    setWindowIcon(QIcon("resources/icon.png"));
     setAttribute(Qt::WA_QuitOnClose, false);  // Prevent the application from quitting
 
     QVBoxLayout* layout = new QVBoxLayout(this);

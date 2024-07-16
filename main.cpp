@@ -57,7 +57,8 @@ int main(int argc, char* argv[]) {
     QObject::connect(&mainWindow, &MainWindow::screenshotClosed, [&]() {
         mainWindow.handleScreenshotClosed();
     });
-    MSG msg;
+
+    /*MSG msg;
     while (true)
     {
         // Wait for messages
@@ -73,7 +74,7 @@ int main(int argc, char* argv[]) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
-    }
+    }*/
 
     return app.exec();
 }

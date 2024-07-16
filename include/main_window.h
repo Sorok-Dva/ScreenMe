@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QWidget>
+#include <QJsonObject>
 #include "config_manager.h"
 #include "UGlobalHotkeys.h"
 

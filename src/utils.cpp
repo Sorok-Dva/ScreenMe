@@ -2,7 +2,7 @@
 #include "include/screenshotdisplay.h"
 #include <QDir>
 #include <QScreen>
-#include <QGuiApplication>
+#include <QApplication>
 #include <QPixmap>
 #include <QDebug>
 
@@ -34,6 +34,6 @@ void CaptureScreenshot(const QString& savePath) {
 
 void displayScreenshotOnScreen(const QPixmap& pixmap) {
     ScreenshotDisplay* displayWidget = new ScreenshotDisplay(pixmap);
-    displayWidget->setGeometry(QGuiApplication::primaryScreen()->geometry());
+    displayWidget->setGeometry(QApplication::primaryScreen()->geometry());
     displayWidget->show();
 }

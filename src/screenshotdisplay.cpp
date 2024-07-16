@@ -3,11 +3,15 @@
 #include <QClipboard>
 #include <QPainter>
 #include <QMouseEvent>
+#include <QShortcut>
 #include <QKeyEvent>
+#include <include/main_window.h>
 
-ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent)
-    : QWidget(parent), originalPixmap(pixmap), selectionStarted(false) {
+ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent) : QWidget(parent), originalPixmap(pixmap), selectionStarted(false) {
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+    setWindowTitle("ScreenMe");
+    setWindowIcon(QIcon("resources/icon.png"));
+    setAttribute(Qt::WA_QuitOnClose, false);
     setGeometry(QApplication::primaryScreen()->geometry());
     QLabel* label = new QLabel(this);
     label->setPixmap(pixmap);
@@ -18,14 +22,15 @@ ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent)
     effect->setOpacity(0.6);
     label->setGraphicsEffect(effect);
 
-    // Ensure closing this window does not quit the app
-    setAttribute(Qt::WA_QuitOnClose, false);
-
-    connect(this, &ScreenshotDisplay::destroyed, [this]() {
-        emit screenshotClosed();
-    });
+    QShortcut* escapeShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
+    connect(escapeShortcut, &QShortcut::activated, this, &ScreenshotDisplay::close);
 
     showFullScreen();
+}
+
+void ScreenshotDisplay::closeEvent(QCloseEvent* event) {
+    emit screenshotClosed();
+    QWidget::closeEvent(event);
 }
 
 void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
@@ -34,42 +39,43 @@ void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
     selectionRect = QRect(origin, QSize());
 }
 
-void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
-    if (selectionStarted) {
-        selectionRect = QRect(origin, event->pos()).normalized();
-        update();
-    }
-}
+//void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
+//    if (selectionStarted) {
+//        selectionRect = QRect(origin, event->pos()).normalized();
+//        update();
+//    }
+//}
+//
+//void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
+//    selectionStarted = false;
+//    copySelectionToClipboard();
+//    close();
+//}
+//
+//void ScreenshotDisplay::keyPressEvent(QKeyEvent* event) {
+//    if (event->key() == Qt::Key_Escape) {
+//        close();
+//    }
+//    else if (event->key() == Qt::Key_C && event->modifiers() == Qt::ControlModifier) {
+//        copySelectionToClipboard();
+//        close();
+//    }
+//}
+//
+//void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
+//    Q_UNUSED(event);
+//    QPainter painter(this);
+//    painter.drawPixmap(0, 0, originalPixmap);
+//    if (selectionStarted) {
+//        painter.setPen(Qt::red);
+//        painter.drawRect(selectionRect);
+//    }
+//}
+//
+//void ScreenshotDisplay::copySelectionToClipboard() {
+//    if (selectionRect.isValid()) {
+//        QPixmap selectedPixmap = originalPixmap.copy(selectionRect);
+//        QApplication::clipboard()->setPixmap(selectedPixmap);
+//    }
+//}
 
-void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
-    selectionStarted = false;
-    copySelectionToClipboard();
-    close();
-}
-
-void ScreenshotDisplay::keyPressEvent(QKeyEvent* event) {
-    if (event->key() == Qt::Key_Escape) {
-        close();
-    }
-    else if (event->key() == Qt::Key_C && event->modifiers() == Qt::ControlModifier) {
-        copySelectionToClipboard();
-        close();
-    }
-}
-
-void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
-    Q_UNUSED(event);
-    QPainter painter(this);
-    painter.drawPixmap(0, 0, originalPixmap);
-    if (selectionStarted) {
-        painter.setPen(Qt::red);
-        painter.drawRect(selectionRect);
-    }
-}
-
-void ScreenshotDisplay::copySelectionToClipboard() {
-    if (selectionRect.isValid()) {
-        QPixmap selectedPixmap = originalPixmap.copy(selectionRect);
-        QApplication::clipboard()->setPixmap(selectedPixmap);
-    }
-}
