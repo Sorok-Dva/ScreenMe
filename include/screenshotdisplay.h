@@ -2,13 +2,11 @@
 #define SCREENSHOTDISPLAY_H
 
 #include <QWidget>
-#include <QLabel>
 #include <QPixmap>
-#include <QGraphicsOpacityEffect>
-#include <QVBoxLayout>
+#include <QLabel>
 #include <QPushButton>
-#include <QPen>
-#include <QColorDialog>
+#include <QWheelEvent>
+#include <QGraphicsOpacityEffect>
 #include "editor.h"
 
 class ScreenshotDisplay : public QWidget {
@@ -24,9 +22,13 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
-    void wheelEvent(QWheelEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
+
+private slots:
+    void onToolSelected(Editor::Tool tool);
+    void onColorChanged(const QColor& color);
 
 private:
     enum HandlePosition {
@@ -42,31 +44,32 @@ private:
     };
 
     HandlePosition handleAtPoint(const QPoint& point);
-    Qt::CursorShape cursorForHandle(HandlePosition handle);
     void resizeSelection(const QPoint& point);
     void drawHandles(QPainter& painter);
-    void updateTooltip();
     void copySelectionToClipboard();
-    void setToolActive(bool active);
-    void deselectTool();
-    void updateColorButton();
+    void updateTooltip();
+    void updateEditorPosition();
+    Qt::CursorShape cursorForHandle(HandlePosition handle);
+    void drawBorderCircle(QPainter& painter, const QPoint& position);
 
     QPixmap originalPixmap;
-    QPixmap semiTransparentPixmap;
+    QPixmap drawingPixmap;
     QRect selectionRect;
+    QRect currentShapeRect;
     QPoint origin;
     bool selectionStarted;
     bool movingSelection;
+    bool drawing;
+    bool shapeDrawing;
+    QPoint selectionOffset;
+    QPoint lastPoint;
     HandlePosition currentHandle;
     QPoint handleOffset;
-    QPoint selectionOffset;
+    QColor currentColor;
+    Editor::Tool currentTool;
+    int borderWidth;
 
     Editor* editor;
-    int currentTool;
-    bool isToolActive;
-    int borderSize;
-    QColor currentColor;
-
     QPushButton* colorButton;
 };
 

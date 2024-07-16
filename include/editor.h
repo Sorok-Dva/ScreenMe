@@ -3,7 +3,8 @@
 
 #include <QWidget>
 #include <QPushButton>
-#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QColorDialog>
 
 class Editor : public QWidget {
     Q_OBJECT
@@ -13,29 +14,29 @@ public:
         Pen,
         Text,
         Rectangle,
-        Oval,
+        Ellipse,
         Line,
         Arrow
     };
 
     explicit Editor(QWidget* parent = nullptr);
 
-    void deselectTools();
-    Tool currentTool() const { return currentTool_; }
-
 signals:
-    void toolSelected(Tool tool);
+    void toolChanged(Tool tool);
+    void colorChanged(const QColor& color);
+
+public slots:
+    void deselectTools();
+    Tool getCurrentTool() const { return currentTool; }
+    void setCurrentColor(const QColor& color);
 
 private:
-    Tool currentTool_;
-    QPushButton* penButton;
-    QPushButton* textButton;
-    QPushButton* rectangleButton;
-    QPushButton* ovalButton;
-    QPushButton* lineButton;
-    QPushButton* arrowButton;
+    void createToolButton(const QString& toolName, Tool toolId);
 
-    void createButton(const QString& text, Tool tool);
+    QVBoxLayout* layout;
+    QList<QPushButton*> toolButtons;
+    Tool currentTool;
+    QColor currentColor;
 };
 
 #endif // EDITOR_H
