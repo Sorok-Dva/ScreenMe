@@ -1,10 +1,10 @@
-#pragma once
+#ifndef SCREENSHOTDISPLAY_H
+#define SCREENSHOTDISPLAY_H
 
 #include <QWidget>
+#include <QPixmap>
 #include <QLabel>
 #include <QGraphicsOpacityEffect>
-#include <QRect>
-#include <QPixmap>
 
 class ScreenshotDisplay : public QWidget {
     Q_OBJECT
@@ -12,23 +12,35 @@ class ScreenshotDisplay : public QWidget {
 public:
     explicit ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent = nullptr);
 
-protected:
-    void closeEvent(QCloseEvent* event) override;
-    void mousePressEvent(QMouseEvent* event) override;
-//    void mouseMoveEvent(QMouseEvent* event) override;
-//    void mouseReleaseEvent(QMouseEvent* event) override;
-//    void keyPressEvent(QKeyEvent* event) override;
-//    void paintEvent(QPaintEvent* event) override;
-
 signals:
     void screenshotClosed();
 
+protected:
+    void closeEvent(QCloseEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void paintEvent(QPaintEvent* event) override;
+
 private:
-    //void copySelectionToClipboard();
+    enum HandlePosition { None, TopLeft, TopRight, BottomLeft, BottomRight, Top, Bottom, Left, Right };
+    HandlePosition handleAtPoint(const QPoint& point);
+    void resizeSelection(const QPoint& point);
+    Qt::CursorShape cursorForHandle(HandlePosition handle);
+    void copySelectionToClipboard();
+    void updateTooltip();
+    void drawHandles(QPainter& painter);
 
     QPixmap originalPixmap;
-    bool selectionStarted;
-    QPoint origin;
+    QPixmap semiTransparentPixmap;
     QRect selectionRect;
+    QPoint origin;
+    bool selectionStarted;
+    bool movingSelection;
+    HandlePosition currentHandle;
+    QPoint selectionOffset;
+    QPoint handleOffset;
 };
 
+#endif // SCREENSHOTDISPLAY_H
