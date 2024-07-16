@@ -8,7 +8,7 @@ CONFIG += c++17 cmdline
 
 HEADERS += \
     include/config_manager.h \
-    include/editor_window.h \
+    include/editor.h \
     include/options_window.h \
     include/main_window.h \
     include/uexception.h \
@@ -20,7 +20,7 @@ HEADERS += \
 SOURCES += \
         main.cpp \
         src/config_manager.cpp \
-        src/editor_window.cpp \
+        src/editor.cpp \
         src/options_window.cpp \
         src/main_window.cpp \
         src/screenshotdisplay.cpp \

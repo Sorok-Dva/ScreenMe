@@ -105,6 +105,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\editor.cpp" />
     <ClCompile Include="src\main_window.cpp" />
     <ClCompile Include="src\screenshotdisplay.cpp" />
     <ClCompile Include="src\uexception.cpp" />
@@ -118,12 +119,12 @@
       <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename).moc</QtMocFileName>
     </ClCompile>
     <ClCompile Include="src\config_manager.cpp" />
-    <ClCompile Include="src\editor_window.cpp" />
     <ClCompile Include="src\options_window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\config_manager.h" />
     <QtMoc Include="include\screenshotdisplay.h" />
+    <QtMoc Include="include\editor.h" />
     <ClInclude Include="include\hotkeymap.h" />
     <QtMoc Include="include\main_window.h" />
     <QtMoc Include="include\ukeysequence.h" />
@@ -132,7 +133,6 @@
     <QtMoc Include="include\uglobalhotkeys.h" />
     <ClInclude Include="include\utils.h" />
     <QtMoc Include="include\options_window.h" />
-    <QtMoc Include="include\editor_window.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\config.json" />
