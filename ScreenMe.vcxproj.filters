@@ -56,6 +56,12 @@
     <ClCompile Include="src\DraggableTextItem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\login_loader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\login_server.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="include\options_window.h">
@@ -74,6 +80,12 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="include\editor.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="include\login_loader.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="include\login_server.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

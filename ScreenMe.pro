@@ -12,6 +12,8 @@ HEADERS += \
     include/editor.h \
     include/options_window.h \
     include/main_window.h \
+    include/login_loader.h \
+    include/login_server.h \
     include/uexception.h \
     include/uglobal.h \
     include/uglobalhotkeys.h \
@@ -26,6 +28,8 @@ SOURCES += \
         src/options_window.cpp \
         src/main_window.cpp \
         src/screenshotdisplay.cpp \
+        src/login_loader.cpp \
+        src/login_server.cpp \
         src/uexception.cpp \
         src/uglobalhotkeys.cpp \
         src/ukeysequence.cpp 

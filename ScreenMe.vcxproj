@@ -107,6 +107,8 @@
   <ItemGroup>
     <ClCompile Include="src\DraggableTextItem.cpp" />
     <ClCompile Include="src\editor.cpp" />
+    <ClCompile Include="src\login_loader.cpp" />
+    <ClCompile Include="src\login_server.cpp" />
     <ClCompile Include="src\main_window.cpp" />
     <ClCompile Include="src\screenshotdisplay.cpp" />
     <ClCompile Include="src\uexception.cpp" />
@@ -130,6 +132,8 @@
     <ClInclude Include="include\hotkeymap.h" />
     <QtMoc Include="include\main_window.h" />
     <QtMoc Include="include\ukeysequence.h" />
+    <QtMoc Include="include\login_loader.h" />
+    <QtMoc Include="include\login_server.h" />
     <ClInclude Include="include\uexception.h" />
     <ClInclude Include="include\uglobal.h" />
     <QtMoc Include="include\uglobalhotkeys.h" />

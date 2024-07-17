@@ -288,10 +288,6 @@ void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
 }
 
 void ScreenshotDisplay::onSaveRequested() {
-    if (!configManager) {
-        qDebug() << "ConfigManager is null!";
-        return;
-    }
     QJsonObject config = configManager->loadConfig();
     QString defaultSaveFolder = config["default_save_folder"].toString();
     QString fileExtension = config["file_extension"].toString();

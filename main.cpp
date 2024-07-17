@@ -1,12 +1,16 @@
+#include <Windows.h>
+#include <iostream>
 #include <QApplication>
 #include <QSystemTrayIcon>
+#include <QDesktopServices>
 #include <QMenu>
 #include <QAction>
 #include <include/options_window.h>
 #include <include/config_manager.h>
+#include "include/login_loader.h"
+#include "include/login_server.h"
 #include <include/main_window.h>
-#include <Windows.h>
-#include <iostream>
+
 using namespace std;
 
 int main(int argc, char* argv[]) {
@@ -16,17 +20,33 @@ int main(int argc, char* argv[]) {
     QSystemTrayIcon trayIcon(QIcon("resources/icon.png"));
     QMenu trayMenu;
 
+    QAction loginAction("Login to ScreenMe", &trayMenu);
     QAction takeScreenshotAction("Take Screenshot", &trayMenu);
     QAction takeFullscreenScreenshotAction("Take Fullscreen Screenshot", &trayMenu);
     QAction optionsAction("Options", &trayMenu);
     QAction exitAction("Exit", &trayMenu);
 
+    trayMenu.addAction(&loginAction);
+    trayMenu.addSeparator();
     trayMenu.addAction(&takeScreenshotAction);
     trayMenu.addAction(&takeFullscreenScreenshotAction);
     trayMenu.addAction(&optionsAction);
     trayMenu.addAction(&exitAction);
     trayIcon.setContextMenu(&trayMenu);
     trayIcon.setToolTip("Press the configured key combination to take a screenshot");
+
+    LoginLoader* loginLoader = new LoginLoader();
+    LoginServer* loginServer = new LoginServer();
+
+    QObject::connect(&loginAction, &QAction::triggered, [&]() {
+        LoginLoader* loader = new LoginLoader();
+        loader->show();
+
+        QDesktopServices::openUrl(QUrl("https://42-media.allods-developers.eu/login"));
+    });
+
+    QObject::connect(&exitAction, &QAction::triggered, &app, &QApplication::quit);
+
 
     MainWindow mainWindow(&configManager);
     mainWindow.hide(); // Ensure the main window is hidden
