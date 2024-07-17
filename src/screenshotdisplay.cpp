@@ -1,5 +1,9 @@
 #include "include/screenshotdisplay.h"
+#include "include/DraggableTextItem.h"
+#include "include/config_manager.h"
 #include <QApplication>
+#include <QFileDialog>
+#include <QInputDialog>
 #include <QClipboard>
 #include <QPainter>
 #include <QMouseEvent>
@@ -9,16 +13,21 @@
 #include <QCursor>
 #include <QDebug>
 #include <QWheelEvent>
+#include <include/utils.h>
 
-ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent)
-    : QWidget(parent), originalPixmap(pixmap), selectionStarted(false), movingSelection(false), currentHandle(None), editor(nullptr), drawing(false), shapeDrawing(false), currentColor(Qt::black), currentTool(Editor::None), borderWidth(2), drawingPixmap(pixmap.size()) {
+ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent, ConfigManager* configManager)
+    : QWidget(parent), originalPixmap(pixmap), selectionStarted(false), movingSelection(false), currentHandle(None), editor(nullptr), configManager(configManager),
+    drawing(false), shapeDrawing(false), currentColor(Qt::black), currentTool(Editor::None), borderWidth(2), 
+    drawingPixmap(pixmap.size()), currentFont("Arial", 16), text("Editable Text") {
+
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setWindowTitle("ScreenMe");
     setWindowIcon(QIcon("resources/icon.png"));
     setAttribute(Qt::WA_QuitOnClose, false);
     setGeometry(QApplication::primaryScreen()->geometry());
 
-    // Initialize drawing pixmap
+    editor = new Editor(this);
+
     drawingPixmap.fill(Qt::transparent);
 
     QShortcut* escapeShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
@@ -35,9 +44,23 @@ ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent)
     QShortcut* copyShortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_C), this);
     connect(copyShortcut, &QShortcut::activated, this, &ScreenshotDisplay::copySelectionToClipboard);
 
-    editor = new Editor(this);
-    editor->hide();
-    connect(editor, &Editor::toolChanged, this, &ScreenshotDisplay::onToolSelected);
+    connect(editor, &Editor::toolChanged, this, [this](Editor::Tool tool) {
+        if (tool == Editor::None) {
+            setCursor(Qt::ArrowCursor);
+        } else {
+            setCursor(Qt::CrossCursor);
+        }
+    });
+    connect(editor, &Editor::colorChanged, this, [this](const QColor& color) {
+        update();
+    });
+    connect(editor, &Editor::saveRequested, this, &ScreenshotDisplay::onSaveRequested);
+    connect(editor, &Editor::copyRequested, this, &ScreenshotDisplay::copySelectionToClipboard);
+    connect(editor, &Editor::publishRequested, this, &ScreenshotDisplay::onPublishRequested);
+    connect(editor, &Editor::closeRequested, this, &ScreenshotDisplay::onCloseRequested);
+
+    QFontMetrics fm(currentFont);
+    textBoundingRect = QRect(QPoint(100, 100), fm.size(0, text));
 
     showFullScreen();
 }
@@ -68,8 +91,19 @@ void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
             currentHandle = None;
             movingSelection = false;
         }
-    }
-    else {
+    } else if (editor->getCurrentTool() == Editor::Text) {
+        if (textBoundingRect.contains(event->pos())) {
+            bool ok;
+            QString newText = QInputDialog::getText(this, "Input Text", "Enter your text:", QLineEdit::Normal, text, &ok);
+            if (ok && !newText.isEmpty()) {
+                text = newText;
+                QFontMetrics fm(currentFont);
+                textBoundingRect = QRect(event->pos(), fm.size(0, text));
+                update();
+            }
+        }
+        update();
+    } else {
         drawing = true;
         lastPoint = event->pos();
         if (editor->getCurrentTool() != Editor::Pen) {
@@ -103,7 +137,7 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
         selectionRect.moveTopLeft(event->pos() - selectionOffset);
         update();
         updateTooltip();
-        updateEditorPosition();
+         updateEditorPosition();
     }
 
     HandlePosition handle = handleAtPoint(event->pos());
@@ -184,12 +218,24 @@ void ScreenshotDisplay::keyPressEvent(QKeyEvent* event) {
 }
 
 void ScreenshotDisplay::wheelEvent(QWheelEvent* event) {
-    if (editor->getCurrentTool() != Editor::None) {
+    if (editor->getCurrentTool() != Editor::None && editor->getCurrentTool() != Editor::Text) {
         borderWidth += event->angleDelta().y() / 120;
         if (borderWidth < 1) borderWidth = 1;
         if (borderWidth > 20) borderWidth = 20;
         update();
     }
+    if (editor->getCurrentTool() == Editor::Text) {
+        int delta = event->angleDelta().y() / 120;
+        int newSize = currentFont.pointSize() + delta;
+        if (newSize > 0) {
+            currentFont.setPointSize(newSize);
+            QFontMetrics fm(currentFont);
+            textBoundingRect = QRect(textBoundingRect.topLeft(), fm.size(0, text));
+            update();
+        }
+        return;
+    }
+
 }
 
 void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
@@ -209,7 +255,6 @@ void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
         painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine));
         switch (editor->getCurrentTool()) {
         case Editor::Pen:
-            qDebug() << "Pen tools used, color : " << editor->getCurrentColor();
             painter.drawPath(drawingPath);
             break;
         case Editor::Rectangle:
@@ -240,6 +285,40 @@ void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
         painter.setBrush(QBrush(Qt::transparent));
         painter.drawEllipse(cursorPosition, borderWidth / 2, borderWidth / 2);
     }
+}
+
+void ScreenshotDisplay::onSaveRequested() {
+    if (!configManager) {
+        qDebug() << "ConfigManager is null!";
+        return;
+    }
+    QJsonObject config = configManager->loadConfig();
+    QString defaultSaveFolder = config["default_save_folder"].toString();
+    QString fileExtension = config["file_extension"].toString();
+    QString defaultFileName = getUniqueFilePath(defaultSaveFolder, "screenshot", fileExtension);
+
+    QString fileFilter = "PNG Files (*.png);;JPEG Files (*.jpg *.jpeg);;";
+    if (fileExtension == "png") {
+        fileFilter = "PNG Files (*.png);;";
+    }
+    else if (fileExtension == "jpg" || fileExtension == "jpeg") {
+        fileFilter = "JPEG Files (*.jpg *.jpeg);;";
+    }
+
+    QString filePath = QFileDialog::getSaveFileName(this, "Save As", defaultFileName, fileFilter);
+
+    if (!filePath.isEmpty()) {
+        originalPixmap.save(filePath);
+        close();
+    }
+}
+
+void ScreenshotDisplay::onPublishRequested() {
+    // Implémentez votre logique de publication en ligne ici
+}
+
+void ScreenshotDisplay::onCloseRequested() {
+    close();
 }
 
 void ScreenshotDisplay::copySelectionToClipboard() {

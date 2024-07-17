@@ -6,7 +6,6 @@
 #include <QJsonObject>
 #include <QDebug>
 #include "include/screenshotdisplay.h"
-#include "include/utils.h"
 #include "include/uglobalhotkeys.h"
 
 MainWindow::MainWindow(ConfigManager* configManager, QWidget* parent)
@@ -42,7 +41,7 @@ void MainWindow::takeScreenshot() {
         return;
     }
     QPixmap originalPixmap = screen->grabWindow(0);
-    ScreenshotDisplay* display = new ScreenshotDisplay(originalPixmap);
+    ScreenshotDisplay* display = new ScreenshotDisplay(originalPixmap, nullptr, configManager);
     connect(display, &ScreenshotDisplay::screenshotClosed, this, &MainWindow::handleScreenshotClosed);
     display->show();
     isScreenshotDisplayed = true;

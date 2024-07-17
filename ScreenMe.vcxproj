@@ -105,6 +105,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\DraggableTextItem.cpp" />
     <ClCompile Include="src\editor.cpp" />
     <ClCompile Include="src\main_window.cpp" />
     <ClCompile Include="src\screenshotdisplay.cpp" />
@@ -125,6 +126,7 @@
     <ClInclude Include="include\config_manager.h" />
     <QtMoc Include="include\screenshotdisplay.h" />
     <QtMoc Include="include\editor.h" />
+    <ClInclude Include="include\DraggableTextItem.h" />
     <ClInclude Include="include\hotkeymap.h" />
     <QtMoc Include="include\main_window.h" />
     <QtMoc Include="include\ukeysequence.h" />

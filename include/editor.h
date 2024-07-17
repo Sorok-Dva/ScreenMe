@@ -6,10 +6,12 @@
 #include <QVBoxLayout>
 #include <QColorDialog>
 #include <QList>
+#include <QHBoxLayout>
 
 class Editor : public QWidget {
     Q_OBJECT
 public:
+    void createActionButton(const QString& buttonName, const char* signal);
     enum Tool {
         None,
         Pen,
@@ -29,18 +31,24 @@ public:
 signals:
     void toolChanged(Tool tool);
     void colorChanged(const QColor& color);
+    void saveRequested();
+    void copyRequested();
+    void publishRequested();
+    void closeRequested();
 
 public slots:
     void deselectTools();
     void setCurrentColor(const QColor& color);
 
+
 private:
     void createToolButton(const QString& toolName, Tool tool);
 
     QVBoxLayout* layout;
+    QHBoxLayout* actionLayout;
+    QPushButton* colorButton;
     QList<QPushButton*> toolButtons;
     Tool currentTool;
-    QPushButton* colorButton;
 };
 
 #endif // EDITOR_H

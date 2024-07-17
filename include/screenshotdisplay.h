@@ -9,11 +9,12 @@
 #include <QPainterPath>
 #include <QGraphicsOpacityEffect>
 #include "editor.h"
+#include "config_manager.h"
 
 class ScreenshotDisplay : public QWidget {
     Q_OBJECT
 public:
-    explicit ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent = nullptr);
+    explicit ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent = nullptr, ConfigManager* configManager = nullptr);
 
 signals:
     void screenshotClosed();
@@ -29,6 +30,10 @@ protected:
 
 private slots:
     void onToolSelected(Editor::Tool tool);
+    void onSaveRequested();
+    void onPublishRequested();
+    void onCloseRequested();
+    void copySelectionToClipboard();
 
 private:
     enum HandlePosition {
@@ -43,11 +48,12 @@ private:
         Right
     };
 
+    ConfigManager* configManager;
+
     HandlePosition handleAtPoint(const QPoint& point);
     void resizeSelection(const QPoint& point);
     void drawHandles(QPainter& painter);
     void drawArrow(QPainter& painter, const QPoint& start, const QPoint& end);
-    void copySelectionToClipboard();
     void updateTooltip();
     void updateEditorPosition();
     Qt::CursorShape cursorForHandle(HandlePosition handle);
@@ -64,6 +70,8 @@ private:
 
     bool selectionStarted;
     bool movingSelection;
+
+    QVBoxLayout* actionLayout;
 
     Editor* editor;
 

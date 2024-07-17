@@ -24,6 +24,13 @@ Editor::Editor(QWidget* parent)
         }
     });
     layout->addWidget(colorButton);
+
+    actionLayout = new QHBoxLayout();
+    createActionButton("Save As", SIGNAL(saveRequested()));
+    createActionButton("Copy to Clipboard", SIGNAL(copyRequested()));
+    createActionButton("Publish Online", SIGNAL(publishRequested()));
+    createActionButton("Close", SIGNAL(closeRequested()));
+    layout->addLayout(actionLayout);
 }
 
 QColor Editor::getCurrentColor() const
@@ -50,6 +57,12 @@ void Editor::createToolButton(const QString& toolName, Tool tool) {
     });
     layout->addWidget(button);
     toolButtons.append(button);
+}
+
+void Editor::createActionButton(const QString& buttonName, const char* signal) {
+    QPushButton* button = new QPushButton(buttonName, this);
+    connect(button, SIGNAL(clicked()), this, signal);
+    actionLayout->addWidget(button);
 }
 
 void Editor::deselectTools() {

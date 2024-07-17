@@ -26,9 +26,6 @@
     <ClCompile Include="src\config_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\editor_window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\options_window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -53,11 +50,14 @@
     <ClCompile Include="src\uglobalhotkeys.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\editor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DraggableTextItem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="include\editor_window.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
     <QtMoc Include="include\options_window.h">
       <Filter>Header Files</Filter>
     </QtMoc>
@@ -71,6 +71,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="include\uglobalhotkeys.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="include\editor.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
@@ -101,6 +104,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\uglobal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DraggableTextItem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
