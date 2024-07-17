@@ -1,4 +1,5 @@
 #include "include/editor.h"
+#include <QIcon>
 
 Editor::Editor(QWidget* parent)
     : QWidget(parent), layout(new QVBoxLayout(this)), currentTool(None), currentColor(Qt::black) {
@@ -6,12 +7,12 @@ Editor::Editor(QWidget* parent)
     setAttribute(Qt::WA_TranslucentBackground);
     setLayout(layout);
 
-    createToolButton("Pen", Pen);
-    createToolButton("Text", Text);
-    createToolButton("Rectangle", Rectangle);
-    createToolButton("Oval", Ellipse);
-    createToolButton("Line", Line);
-    createToolButton("Arrow", Arrow);
+    createToolButton("Pen", Pen, QIcon("resources/icons/pen.png"));
+    createToolButton("Text", Text, QIcon("resources/icons/text.png"));
+    createToolButton("Rectangle", Rectangle, QIcon("resources/icons/rectangle.png"));
+    createToolButton("Oval", Ellipse, QIcon("resources/icons/ellipse.png"));
+    createToolButton("Line", Line, QIcon("resources/icons/line.png"));
+    createToolButton("Arrow", Arrow, QIcon("resources/icons/arrow.png"));
 
     colorButton = new QPushButton(this);
     colorButton->setFixedSize(24, 24);
@@ -26,10 +27,10 @@ Editor::Editor(QWidget* parent)
     layout->addWidget(colorButton);
 
     actionLayout = new QHBoxLayout();
-    createActionButton("Save As", SIGNAL(saveRequested()));
-    createActionButton("Copy to Clipboard", SIGNAL(copyRequested()));
-    createActionButton("Publish Online", SIGNAL(publishRequested()));
-    createActionButton("Close", SIGNAL(closeRequested()));
+    createActionButton("Save", QIcon("resources/icons/save.png"), "saveRequested");
+    createActionButton("Copy to clipboard (CTRL + C)", QIcon("resources/icons/copy.png"), "copyRequested");
+    createActionButton("Upload to ScreenMe", QIcon("resources/icons/upload.png"), "publishRequested");
+    createActionButton("Close editor", QIcon("resources/icons/close.png"), "closeRequested");
     layout->addLayout(actionLayout);
 }
 
@@ -38,9 +39,12 @@ QColor Editor::getCurrentColor() const
     return currentColor;
 }
 
-void Editor::createToolButton(const QString& toolName, Tool tool) {
-    QPushButton* button = new QPushButton(toolName, this);
+void Editor::createToolButton(const QString& toolName, Tool tool, const QIcon& icon) {
+    QPushButton* button = new QPushButton(this);
+    button->setIcon(icon);
+    button->setIconSize(QSize(15, 15));
     button->setCheckable(true);
+    button->setToolTip(toolName);
     connect(button, &QPushButton::clicked, [this, tool, button]() {
         if (button->isChecked()) {
             currentTool = tool;
@@ -59,10 +63,15 @@ void Editor::createToolButton(const QString& toolName, Tool tool) {
     toolButtons.append(button);
 }
 
-void Editor::createActionButton(const QString& buttonName, const char* signal) {
-    QPushButton* button = new QPushButton(buttonName, this);
-    connect(button, SIGNAL(clicked()), this, signal);
-    actionLayout->addWidget(button);
+void Editor::createActionButton(const QString& tooltip, const QIcon& icon, const QString& signal) {
+    QPushButton* button = new QPushButton(this);
+    button->setIcon(icon);
+    button->setIconSize(QSize(15, 15));
+    button->setToolTip(tooltip);
+    connect(button, &QPushButton::clicked, this, [this, signal]() {
+        QMetaObject::invokeMethod(this, signal.toUtf8().constData());
+    });
+    layout->addWidget(button);
 }
 
 void Editor::deselectTools() {

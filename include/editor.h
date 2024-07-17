@@ -11,7 +11,6 @@
 class Editor : public QWidget {
     Q_OBJECT
 public:
-    void createActionButton(const QString& buttonName, const char* signal);
     enum Tool {
         None,
         Pen,
@@ -42,7 +41,8 @@ public slots:
 
 
 private:
-    void createToolButton(const QString& toolName, Tool tool);
+    void createToolButton(const QString& toolName, Tool tool, const QIcon& icon);
+    void createActionButton(const QString& tooltip, const QIcon& icon, const QString& signal);
 
     QVBoxLayout* layout;
     QHBoxLayout* actionLayout;

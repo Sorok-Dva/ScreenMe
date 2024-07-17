@@ -89,6 +89,36 @@
     <Image Include="resources\icon.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="resources\icons\ellipse.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\icons\rectangle.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\icons\pen.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\icons\upload.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\icons\copy.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\icons\save.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\icons\close.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\icons\arrow.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\icons\line.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="resources\icons\text.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\config_manager.h">
