@@ -38,19 +38,6 @@ ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent)
     editor = new Editor(this);
     editor->hide();
     connect(editor, &Editor::toolChanged, this, &ScreenshotDisplay::onToolSelected);
-    connect(editor, &Editor::colorChanged, this, &ScreenshotDisplay::onColorChanged);
-
-    // Initialize Color Button
-    colorButton = new QPushButton(this);
-    colorButton->setFixedSize(24, 24);
-    colorButton->setStyleSheet("background-color: black");
-    connect(colorButton, &QPushButton::clicked, [this]() {
-        QColor color = QColorDialog::getColor(Qt::black, this, "Select Color");
-        if (color.isValid()) {
-            editor->setCurrentColor(color);
-            colorButton->setStyleSheet(QString("background-color: %1").arg(color.name()));
-        }
-    });
 
     showFullScreen();
 }
@@ -102,7 +89,7 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
     else if (drawing && editor->getCurrentTool() == Editor::Pen) {
         QPixmap tempPixmap = drawingPixmap.copy();
         QPainter painter(&tempPixmap);
-        painter.setPen(QPen(currentColor, borderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
         painter.drawLine(lastPoint, event->pos());
         lastPoint = event->pos();
         drawingPixmap = tempPixmap;
@@ -149,7 +136,7 @@ void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
     if (shapeDrawing) {
         QPixmap tempPixmap = drawingPixmap.copy();
         QPainter painter(&tempPixmap);
-        painter.setPen(QPen(currentColor, borderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 
         switch (editor->getCurrentTool()) {
         case Editor::Rectangle:
@@ -216,21 +203,30 @@ void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
         drawHandles(painter);
     }
 
-    if (shapeDrawing && editor->getCurrentTool() != Editor::Pen) {
-        painter.setPen(QPen(currentColor, borderWidth, Qt::DashLine));
+    if (shapeDrawing) {
+        painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine));
         switch (editor->getCurrentTool()) {
+        case Editor::Pen:
+            qDebug() << "Pen tools used, color : " << editor->getCurrentColor();
+            painter.drawPath(drawingPath);
+            break;
         case Editor::Rectangle:
+            painter.setBrush(Qt::NoBrush);
             painter.drawRect(currentShapeRect);
             break;
         case Editor::Ellipse:
+            painter.setBrush(Qt::NoBrush);
             painter.drawEllipse(currentShapeRect);
             break;
         case Editor::Line:
-            painter.drawLine(currentShapeRect.topLeft(), currentShapeRect.bottomRight());
+            painter.drawLine(origin, drawingEnd);
             break;
         case Editor::Arrow:
-            painter.drawLine(currentShapeRect.topLeft(), currentShapeRect.bottomRight());
-            // Add arrow head drawing logic here
+            drawArrow(painter, origin, drawingEnd);
+            break;
+        case Editor::Text:
+            painter.setFont(currentFont);
+            painter.drawText(textBoundingRect, Qt::AlignLeft, text);
             break;
         default:
             break;
@@ -239,6 +235,8 @@ void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
 
     if (editor->getCurrentTool() != Editor::None) {
         drawBorderCircle(painter, mapFromGlobal(QCursor::pos()));
+        painter.setBrush(QBrush(Qt::transparent));
+        painter.drawEllipse(cursorPosition, borderWidth / 2, borderWidth / 2);
     }
 }
 
@@ -357,21 +355,34 @@ void ScreenshotDisplay::onToolSelected(Editor::Tool tool) {
     }
 }
 
-void ScreenshotDisplay::onColorChanged(const QColor& color) {
-    currentColor = color;
-    colorButton->setStyleSheet(QString("background-color: %1").arg(color.name()));
-}
-
 void ScreenshotDisplay::updateEditorPosition() {
     if (selectionRect.isValid()) {
         const int margin = 10;
         editor->move(selectionRect.bottomRight() + QPoint(margin, margin));
-        colorButton->move(editor->pos() + QPoint(0, editor->height() + margin));
     }
 }
 
+void ScreenshotDisplay::drawArrow(QPainter& painter, const QPoint& start, const QPoint& end) {
+    painter.drawLine(start, end);
+
+    double angle = std::atan2(end.y() - start.y(), end.x() - start.x());
+
+    const double arrowHeadLength = 20.0;
+    const double arrowHeadAngle = M_PI / 6;
+
+    QPoint arrowP1 = end + QPoint(std::cos(angle + arrowHeadAngle) * arrowHeadLength,
+        std::sin(angle + arrowHeadAngle) * arrowHeadLength);
+    QPoint arrowP2 = end + QPoint(std::cos(angle - arrowHeadAngle) * arrowHeadLength,
+        std::sin(angle - arrowHeadAngle) * arrowHeadLength);
+
+    QPolygon arrowHead;
+    arrowHead << end << arrowP1 << arrowP2;
+
+    painter.drawPolygon(arrowHead);
+}
+
 void ScreenshotDisplay::drawBorderCircle(QPainter& painter, const QPoint& position) {
-    painter.setPen(QPen(Qt::red , 2, Qt::DashLine));
+    painter.setPen(QPen(editor->getCurrentColor(), 2, Qt::SolidLine));
     painter.setBrush(Qt::NoBrush);
     painter.drawEllipse(position, borderWidth, borderWidth);
 }

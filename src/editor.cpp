@@ -9,33 +9,43 @@ Editor::Editor(QWidget* parent)
     createToolButton("Pen", Pen);
     createToolButton("Text", Text);
     createToolButton("Rectangle", Rectangle);
-    createToolButton("Ellipse", Ellipse);
+    createToolButton("Oval", Ellipse);
     createToolButton("Line", Line);
     createToolButton("Arrow", Arrow);
 
-    QPushButton* colorButton = new QPushButton(this);
+    colorButton = new QPushButton(this);
     colorButton->setFixedSize(24, 24);
     colorButton->setStyleSheet("background-color: black");
     connect(colorButton, &QPushButton::clicked, [this]() {
-        QColor color = QColorDialog::getColor(Qt::black, this, "Select Color");
+        QColor color = QColorDialog::getColor(currentColor, this, "Select Color");
         if (color.isValid()) {
-            currentColor = color;
+            setCurrentColor(color);
             emit colorChanged(color);
         }
     });
     layout->addWidget(colorButton);
 }
 
-void Editor::createToolButton(const QString& toolName, Tool toolId) {
+QColor Editor::getCurrentColor() const
+{
+    return currentColor;
+}
+
+void Editor::createToolButton(const QString& toolName, Tool tool) {
     QPushButton* button = new QPushButton(toolName, this);
     button->setCheckable(true);
-    connect(button, &QPushButton::clicked, [this, toolId, button]() {
-        currentTool = toolId;
-        emit toolChanged(toolId);
-        for (QPushButton* btn : toolButtons) {
-            if (btn != button) {
-                btn->setChecked(false);
+    connect(button, &QPushButton::clicked, [this, tool, button]() {
+        if (button->isChecked()) {
+            currentTool = tool;
+            for (QPushButton* btn : toolButtons) {
+                if (btn != button) {
+                    btn->setChecked(false);
+                }
             }
+            emit toolChanged(tool);
+        } else {
+            currentTool = None;
+            emit toolChanged(None);
         }
     });
     layout->addWidget(button);
@@ -44,13 +54,13 @@ void Editor::createToolButton(const QString& toolName, Tool toolId) {
 
 void Editor::deselectTools() {
     currentTool = None;
-    emit toolChanged(None);
     for (QPushButton* button : toolButtons) {
         button->setChecked(false);
     }
+    emit toolChanged(None);
 }
 
 void Editor::setCurrentColor(const QColor& color) {
     currentColor = color;
-    emit colorChanged(color);
+    colorButton->setStyleSheet(QString("background-color: %1").arg(color.name()));
 }

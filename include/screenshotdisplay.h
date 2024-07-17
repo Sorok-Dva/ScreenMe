@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QWheelEvent>
+#include <QPainterPath>
 #include <QGraphicsOpacityEffect>
 #include "editor.h"
 
@@ -28,7 +29,6 @@ protected:
 
 private slots:
     void onToolSelected(Editor::Tool tool);
-    void onColorChanged(const QColor& color);
 
 private:
     enum HandlePosition {
@@ -46,6 +46,7 @@ private:
     HandlePosition handleAtPoint(const QPoint& point);
     void resizeSelection(const QPoint& point);
     void drawHandles(QPainter& painter);
+    void drawArrow(QPainter& painter, const QPoint& start, const QPoint& end);
     void copySelectionToClipboard();
     void updateTooltip();
     void updateEditorPosition();
@@ -54,11 +55,18 @@ private:
 
     QPixmap originalPixmap;
     QPixmap drawingPixmap;
+
+    QPoint origin;
+    QPoint drawingEnd;
+
     QRect selectionRect;
     QRect currentShapeRect;
-    QPoint origin;
+
     bool selectionStarted;
     bool movingSelection;
+
+    Editor* editor;
+
     bool drawing;
     bool shapeDrawing;
     QPoint selectionOffset;
@@ -68,9 +76,12 @@ private:
     QColor currentColor;
     Editor::Tool currentTool;
     int borderWidth;
-
-    Editor* editor;
-    QPushButton* colorButton;
+    QPainterPath drawingPath;
+    bool showBorderCircle;
+    QPoint cursorPosition;
+    QRect textBoundingRect;
+    QString text;
+    QFont currentFont;
 };
 
 #endif // SCREENSHOTDISPLAY_H

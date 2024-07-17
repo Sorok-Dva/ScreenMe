@@ -5,6 +5,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QColorDialog>
+#include <QList>
 
 class Editor : public QWidget {
     Q_OBJECT
@@ -18,8 +19,12 @@ public:
         Line,
         Arrow
     };
+    QColor currentColor;
 
     explicit Editor(QWidget* parent = nullptr);
+
+    Tool getCurrentTool() const { return currentTool; }
+    QColor getCurrentColor() const;
 
 signals:
     void toolChanged(Tool tool);
@@ -27,16 +32,15 @@ signals:
 
 public slots:
     void deselectTools();
-    Tool getCurrentTool() const { return currentTool; }
     void setCurrentColor(const QColor& color);
 
 private:
-    void createToolButton(const QString& toolName, Tool toolId);
+    void createToolButton(const QString& toolName, Tool tool);
 
     QVBoxLayout* layout;
     QList<QPushButton*> toolButtons;
     Tool currentTool;
-    QColor currentColor;
+    QPushButton* colorButton;
 };
 
 #endif // EDITOR_H
