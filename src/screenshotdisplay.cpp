@@ -103,6 +103,7 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
         selectionRect.moveTopLeft(event->pos() - selectionOffset);
         update();
         updateTooltip();
+        updateEditorPosition();
     }
 
     HandlePosition handle = handleAtPoint(event->pos());
@@ -198,6 +199,7 @@ void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
     painter.drawPixmap(0, 0, drawingPixmap);
 
     if (selectionRect.isValid()) {
+        //painter.drawPixmap(selectionRect, originalPixmap, selectionRect);
         painter.setPen(QPen(Qt::red, 2, Qt::DashLine));
         painter.drawRect(selectionRect);
         drawHandles(painter);
@@ -358,7 +360,7 @@ void ScreenshotDisplay::onToolSelected(Editor::Tool tool) {
 void ScreenshotDisplay::updateEditorPosition() {
     if (selectionRect.isValid()) {
         const int margin = 10;
-        editor->move(selectionRect.bottomRight() + QPoint(margin, margin));
+        editor->move(selectionRect.topRight() + QPoint(margin, margin));
     }
 }
 
