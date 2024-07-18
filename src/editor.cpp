@@ -7,13 +7,6 @@ Editor::Editor(QWidget* parent)
     setAttribute(Qt::WA_TranslucentBackground);
     setLayout(layout);
 
-    createToolButton("Pen", Pen, QIcon("resources/icons/pen.png"));
-    createToolButton("Text", Text, QIcon("resources/icons/text.png"));
-    createToolButton("Rectangle", Rectangle, QIcon("resources/icons/rectangle.png"));
-    createToolButton("Oval", Ellipse, QIcon("resources/icons/ellipse.png"));
-    createToolButton("Line", Line, QIcon("resources/icons/line.png"));
-    createToolButton("Arrow", Arrow, QIcon("resources/icons/arrow.png"));
-
     colorButton = new QPushButton(this);
     colorButton->setFixedSize(24, 24);
     colorButton->setStyleSheet("background-color: black");
@@ -25,6 +18,13 @@ Editor::Editor(QWidget* parent)
         }
     });
     layout->addWidget(colorButton);
+
+    createToolButton("Pen", Pen, QIcon("resources/icons/pen.png"));
+    createToolButton("Text", Text, QIcon("resources/icons/text.png"));
+    createToolButton("Rectangle", Rectangle, QIcon("resources/icons/rectangle.png"));
+    createToolButton("Oval", Ellipse, QIcon("resources/icons/ellipse.png"));
+    createToolButton("Line", Line, QIcon("resources/icons/line.png"));
+    createToolButton("Arrow", Arrow, QIcon("resources/icons/arrow.png"));
 
     actionLayout = new QHBoxLayout();
     createActionButton("Save", QIcon("resources/icons/save.png"), "saveRequested");
