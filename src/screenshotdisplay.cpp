@@ -156,6 +156,11 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
         editor->show();
     }
 
+    // Redraw selection rectangle if selection is valid
+    if (selectionRect.isValid()) {
+        update();
+    }
+
     // Update border circle position
     if (editor->getCurrentTool() != Editor::None) {
         update();
