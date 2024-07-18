@@ -106,6 +106,7 @@ void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
     } else {
         drawing = true;
         lastPoint = event->pos();
+        origin = event->pos();
         if (editor->getCurrentTool() != Editor::Pen) {
             shapeDrawing = true;
             currentShapeRect = QRect(lastPoint, QSize());
@@ -131,6 +132,7 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
     }
     else if (shapeDrawing) {
         currentShapeRect = QRect(lastPoint, event->pos()).normalized();
+        drawingEnd = event->pos();
         update();
     }
     else if (movingSelection) {
@@ -186,12 +188,10 @@ void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
             painter.drawEllipse(currentShapeRect);
             break;
         case Editor::Line:
-            painter.drawLine(currentShapeRect.topLeft(), currentShapeRect.bottomRight());
+            painter.drawLine(lastPoint, drawingEnd);
             break;
         case Editor::Arrow:
-            // Draw arrow
-            painter.drawLine(currentShapeRect.topLeft(), currentShapeRect.bottomRight());
-            // Add arrow head drawing logic here
+            drawArrow(painter, lastPoint, drawingEnd);
             break;
         case Editor::Text:
             // Implement text drawing
@@ -274,7 +274,7 @@ void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
             painter.drawLine(origin, drawingEnd);
             break;
         case Editor::Arrow:
-            drawArrow(painter, origin, drawingEnd);
+            drawArrow(painter, lastPoint, drawingEnd);
             break;
         case Editor::Text:
             painter.setFont(currentFont);
@@ -448,9 +448,9 @@ void ScreenshotDisplay::updateEditorPosition() {
 void ScreenshotDisplay::drawArrow(QPainter& painter, const QPoint& start, const QPoint& end) {
     painter.drawLine(start, end);
 
-    double angle = std::atan2(end.y() - start.y(), end.x() - start.x());
+    double angle = std::atan2(start.y() - end.y(), start.x() - end.x());
 
-    const double arrowHeadLength = 20.0;
+    const double arrowHeadLength = borderWidth * 2;
     const double arrowHeadAngle = M_PI / 6;
 
     QPoint arrowP1 = end + QPoint(std::cos(angle + arrowHeadAngle) * arrowHeadLength,
@@ -461,8 +461,11 @@ void ScreenshotDisplay::drawArrow(QPainter& painter, const QPoint& start, const 
     QPolygon arrowHead;
     arrowHead << end << arrowP1 << arrowP2;
 
+    painter.setBrush(QBrush(editor->getCurrentColor()));
     painter.drawPolygon(arrowHead);
 }
+
+
 
 void ScreenshotDisplay::drawBorderCircle(QPainter& painter, const QPoint& position) {
     painter.setPen(QPen(editor->getCurrentColor(), 2, Qt::SolidLine));
