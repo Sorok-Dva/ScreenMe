@@ -18,6 +18,18 @@ class ScreenshotDisplay : public QWidget {
 public:
     explicit ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent = nullptr, ConfigManager* configManager = nullptr);
 
+    enum HandlePosition {
+        None,
+        TopLeft,
+        TopRight,
+        BottomLeft,
+        BottomRight,
+        Top,
+        Bottom,
+        Left,
+        Right
+    };
+
 signals:
     void screenshotClosed();
 
@@ -39,67 +51,53 @@ private slots:
     void undo();
 
 private:
-    std::stack<QPixmap> undoStack;
-    enum HandlePosition {
-        None,
-        TopLeft,
-        TopRight,
-        BottomLeft,
-        BottomRight,
-        Top,
-        Bottom,
-        Left,
-        Right
-    };
-
-    ConfigManager* configManager;
-
-    HandlePosition handleAtPoint(const QPoint& point);
-    void resizeSelection(const QPoint& point);
-    void drawHandles(QPainter& painter);
-    void drawArrow(QPainter& painter, const QPoint& start, const QPoint& end);
+    void initializeEditor();
+    void configureShortcuts();
     void updateTooltip();
     void updateEditorPosition();
-    Qt::CursorShape cursorForHandle(HandlePosition handle);
+    void drawHandles(QPainter& painter);
+    void drawArrow(QPainter& painter, const QPoint& start, const QPoint& end);
     void drawBorderCircle(QPainter& painter, const QPoint& position);
     void saveStateForUndo();
-    void adjustTextEditSize();
     void finalizeTextEdit();
+    void adjustTextEditSize();
+    HandlePosition handleAtPoint(const QPoint& point);
+    void resizeSelection(const QPoint& point);
+    Qt::CursorShape cursorForHandle(HandlePosition handle);
 
+    std::stack<QPixmap> undoStack;
     QPixmap originalPixmap;
     QPixmap drawingPixmap;
-
     QPoint origin;
     QPoint drawingEnd;
-
     QRect selectionRect;
     QRect currentShapeRect;
+    QPoint selectionOffset;
+    QPoint lastPoint;
+    QPoint handleOffset;
+    QPoint cursorPosition;
+    QPoint textEditPosition;
+    QRect textBoundingRect;
 
     bool selectionStarted;
     bool movingSelection;
-
-    QVBoxLayout* actionLayout;
-
-    Editor* editor;
-
     bool drawing;
     bool shapeDrawing;
-    QPoint selectionOffset;
-    QPoint lastPoint;
-    HandlePosition currentHandle;
-    QPoint handleOffset;
+    bool showBorderCircle;
+
+    int borderWidth;
+
     QColor currentColor;
     Editor::Tool currentTool;
-    int borderWidth;
-    QPainterPath drawingPath;
-    bool showBorderCircle;
-    QPoint cursorPosition;
-    QRect textBoundingRect;
-    QString text;
     QFont currentFont;
 
+    QString text;
     QTextEdit* textEdit;
-    QPoint textEditPosition;
+    QScopedPointer<Editor> editor;
+    ConfigManager* configManager;
+
+    HandlePosition currentHandle;
+    QPainterPath drawingPath;
 };
 
 #endif // SCREENSHOTDISPLAY_H

@@ -1,24 +1,20 @@
 #include "include/screenshotdisplay.h"
-#include "include/DraggableTextItem.h"
 #include "include/config_manager.h"
+#include "include/utils.h"
 #include <QApplication>
 #include <QFileDialog>
-#include <QInputDialog>
 #include <QClipboard>
 #include <QPainter>
 #include <QMouseEvent>
 #include <QShortcut>
-#include <QKeyEvent>
 #include <QToolTip>
 #include <QCursor>
-#include <QDebug>
 #include <QWheelEvent>
-#include <include/utils.h>
 
 ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent, ConfigManager* configManager)
-    : QWidget(parent), originalPixmap(pixmap), selectionStarted(false), movingSelection(false), currentHandle(None), editor(nullptr), configManager(configManager),
-    drawing(false), shapeDrawing(false), currentColor(Qt::black), currentTool(Editor::None), borderWidth(5), 
-    drawingPixmap(pixmap.size()), currentFont("Arial", 16), text("Editable Text") {
+    : QWidget(parent), originalPixmap(pixmap), selectionStarted(false), movingSelection(false), currentHandle(None), configManager(configManager),
+    drawing(false), shapeDrawing(false), currentColor(Qt::black), currentTool(Editor::None), borderWidth(5),
+    drawingPixmap(pixmap.size()), currentFont("Arial", 16), text("Editable Text"), textEdit(nullptr) {
 
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setWindowTitle("ScreenMe");
@@ -26,10 +22,29 @@ ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent, Con
     setAttribute(Qt::WA_QuitOnClose, false);
     setGeometry(QApplication::primaryScreen()->geometry());
 
-    editor = new Editor(this);
+    initializeEditor();
+    configureShortcuts();
 
     drawingPixmap.fill(Qt::transparent);
+    QFontMetrics fm(currentFont);
+    textBoundingRect = QRect(QPoint(100, 100), fm.size(0, text));
+    showFullScreen();
+}
 
+void ScreenshotDisplay::initializeEditor() {
+    editor.reset(new Editor(this));
+    connect(editor.get(), &Editor::toolChanged, this, &ScreenshotDisplay::onToolSelected);
+    connect(editor.get(), &Editor::colorChanged, this, [this](const QColor& color) {
+        update();
+    });
+    connect(editor.get(), &Editor::saveRequested, this, &ScreenshotDisplay::onSaveRequested);
+    connect(editor.get(), &Editor::copyRequested, this, &ScreenshotDisplay::copySelectionToClipboard);
+    connect(editor.get(), &Editor::publishRequested, this, &ScreenshotDisplay::onPublishRequested);
+    connect(editor.get(), &Editor::closeRequested, this, &ScreenshotDisplay::onCloseRequested);
+}
+
+
+void ScreenshotDisplay::configureShortcuts() {
     QShortcut* escapeShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
     connect(escapeShortcut, &QShortcut::activated, [this]() {
         if (editor->getCurrentTool() != Editor::None) {
@@ -46,26 +61,6 @@ ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent, Con
 
     QShortcut* copyShortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_C), this);
     connect(copyShortcut, &QShortcut::activated, this, &ScreenshotDisplay::copySelectionToClipboard);
-
-    connect(editor, &Editor::toolChanged, this, [this](Editor::Tool tool) {
-        if (tool == Editor::None) {
-            setCursor(Qt::ArrowCursor);
-        } else {
-            setCursor(Qt::CrossCursor);
-        }
-    });
-    connect(editor, &Editor::colorChanged, this, [this](const QColor& color) {
-        update();
-    });
-    connect(editor, &Editor::saveRequested, this, &ScreenshotDisplay::onSaveRequested);
-    connect(editor, &Editor::copyRequested, this, &ScreenshotDisplay::copySelectionToClipboard);
-    connect(editor, &Editor::publishRequested, this, &ScreenshotDisplay::onPublishRequested);
-    connect(editor, &Editor::closeRequested, this, &ScreenshotDisplay::onCloseRequested);
-
-    QFontMetrics fm(currentFont);
-    textBoundingRect = QRect(QPoint(100, 100), fm.size(0, text));
-
-    showFullScreen();
 }
 
 void ScreenshotDisplay::closeEvent(QCloseEvent* event) {
@@ -117,7 +112,8 @@ void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
         else {
             finalizeTextEdit();
         }
-    } else {
+    }
+    else {
         saveStateForUndo();
         drawing = true;
         lastPoint = event->pos();
@@ -130,6 +126,13 @@ void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
 }
 
 void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
+    if (selectionRect.isValid() && editor->isHidden()) {
+        updateEditorPosition();
+        editor->show();
+    }
+    if (selectionRect.isValid()) {
+        update();
+    }
     if (selectionStarted) {
         selectionRect = QRect(origin, event->pos()).normalized();
         update();
@@ -154,32 +157,11 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
         selectionRect.moveTopLeft(event->pos() - selectionOffset);
         update();
         updateTooltip();
-         updateEditorPosition();
+        updateEditorPosition();
     }
 
     HandlePosition handle = handleAtPoint(event->pos());
-    if (handle != None) {
-        setCursor(cursorForHandle(handle));
-    }
-    else if (selectionRect.contains(event->pos()) && editor->getCurrentTool() == Editor::None) {
-        setCursor(Qt::SizeAllCursor);
-    }
-    else {
-        setCursor(Qt::ArrowCursor);
-    }
-
-    if (selectionRect.isValid() && editor->isHidden()) {
-        updateEditorPosition();
-        editor->show();
-    }
-
-    if (selectionRect.isValid()) {
-        update();
-    }
-
-    if (editor->getCurrentTool() != Editor::None) {
-        update();
-    }
+    setCursor(cursorForHandle(handle));
 }
 
 void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
@@ -190,7 +172,6 @@ void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
 
     if (shapeDrawing) {
         saveStateForUndo();
-
         QPixmap tempPixmap = drawingPixmap.copy();
         QPainter painter(&tempPixmap);
         painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
@@ -242,8 +223,7 @@ void ScreenshotDisplay::keyPressEvent(QKeyEvent* event) {
 void ScreenshotDisplay::wheelEvent(QWheelEvent* event) {
     if (editor->getCurrentTool() != Editor::None && editor->getCurrentTool() != Editor::Text) {
         borderWidth += event->angleDelta().y() / 120;
-        if (borderWidth < 1) borderWidth = 1;
-        if (borderWidth > 20) borderWidth = 20;
+        borderWidth = std::clamp(borderWidth, 1, 20);
         update();
     }
     if (editor->getCurrentTool() == Editor::Text && textEdit) {
@@ -255,7 +235,6 @@ void ScreenshotDisplay::wheelEvent(QWheelEvent* event) {
             adjustTextEditSize();
             update();
         }
-        return;
     }
 }
 
@@ -266,7 +245,6 @@ void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
     painter.drawPixmap(0, 0, drawingPixmap);
 
     if (selectionRect.isValid()) {
-        //painter.drawPixmap(selectionRect, originalPixmap, selectionRect);
         painter.setPen(QPen(Qt::red, 2, Qt::DashLine));
         painter.drawRect(selectionRect);
         drawHandles(painter);
@@ -304,7 +282,7 @@ void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
 
     if (editor->getCurrentTool() != Editor::None) {
         drawBorderCircle(painter, mapFromGlobal(QCursor::pos()));
-        painter.setBrush(QBrush(Qt::transparent));
+        painter.setBrush(Qt::transparent);
         painter.drawEllipse(cursorPosition, borderWidth / 2, borderWidth / 2);
     }
 }
@@ -332,7 +310,7 @@ void ScreenshotDisplay::onSaveRequested() {
 }
 
 void ScreenshotDisplay::onPublishRequested() {
-    // Implémentez votre logique de publication en ligne ici
+    // TODO
 }
 
 void ScreenshotDisplay::onCloseRequested() {
@@ -447,12 +425,7 @@ Qt::CursorShape ScreenshotDisplay::cursorForHandle(HandlePosition handle) {
 
 void ScreenshotDisplay::onToolSelected(Editor::Tool tool) {
     currentTool = tool;
-    if (tool == Editor::None) {
-        setCursor(Qt::ArrowCursor);
-    }
-    else {
-        setCursor(Qt::CrossCursor);
-    }
+    setCursor(tool == Editor::None ? Qt::ArrowCursor : Qt::CrossCursor);
 }
 
 void ScreenshotDisplay::updateEditorPosition() {
