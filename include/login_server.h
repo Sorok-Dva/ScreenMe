@@ -2,26 +2,27 @@
 #define LOGIN_SERVER_H
 
 #include <QObject>
-#include <QtWebSockets/QWebSocket>
-#include <QtWebSockets/QWebSocketServer>
+#include <QWebSocketServer>
+#include <QWebSocket>
+#include <QJsonDocument>
+#include <QJsonObject>
 
-class LoginServer : public QObject
-{
+class LoginServer : public QObject {
     Q_OBJECT
 public:
     explicit LoginServer(QObject* parent = nullptr);
-    ~LoginServer();
 
 signals:
-    void userLoggedIn();
+    void userLoggedIn(const QString& id, const QString& nickname, const QString& email);
 
-private slots:
+public slots:
     void onNewConnection();
-    void processMessage(const QString& message);
+    void processTextMessage(QString message);
+    void socketDisconnected();
 
 private:
-    QWebSocketServer* m_webSocketServer;
-    QList<QWebSocket*> m_clients;
+    QWebSocketServer* webSocketServer;
+    QList<QWebSocket*> clients;
 };
 
 #endif // LOGIN_SERVER_H

@@ -1,10 +1,13 @@
-#include <Windows.h>
+﻿#include <Windows.h>
 #include <iostream>
 #include <QApplication>
 #include <QSystemTrayIcon>
 #include <QDesktopServices>
 #include <QMenu>
 #include <QAction>
+#include <QFile>
+#include <QTextStream>
+#include <QMessageBox>
 #include <include/options_window.h>
 #include <include/config_manager.h>
 #include "include/login_loader.h"
@@ -13,8 +16,59 @@
 
 using namespace std;
 
+const QString VERSION = "1.0.2";
+const QString screenMeHost = "http://localhost:3001";
+
+static void showAboutDialog() {
+    QMessageBox aboutBox;
+    aboutBox.setWindowTitle("About ScreenMe");
+    aboutBox.setTextFormat(Qt::RichText);
+    aboutBox.setText(
+        "<h1>ScreenMe<h1>"
+        "Version <b>" + VERSION + "</b><br><br>"
+        "<span style=\"color: green\">Contribute on GitHub ! </span> : <a href=\"https://github.com/Sorok-Dva/ScreenMe\">Github Repository</a><br><br>"
+    );
+    aboutBox.setInformativeText(
+        "Terms of use of ScreenMe : <a href=\"" + screenMeHost + "/terms-of-use\">" + screenMeHost + "/terms-of-use</a><br><br>"
+        "© 2024 Developed by <a href=\"https://github.com/Sorok-Dva\">Сорок два</a>. <b>All rights reserved.</b>"
+    );
+    aboutBox.setIconPixmap(QPixmap("resources/icon.png"));
+    aboutBox.exec();
+}
+
+static void saveLoginInfo(const QString& id, const QString& email, const QString& nickname) {
+    QFile file("resources/login_info.json");
+    if (file.open(QIODevice::WriteOnly)) {
+        QJsonObject jsonObj;
+        jsonObj["id"] = id;
+        jsonObj["email"] = email;
+        jsonObj["nickname"] = nickname;
+
+        QJsonDocument jsonDoc(jsonObj);
+        file.write(jsonDoc.toJson());
+    }
+}
+
+static QString loadLoginInfo() {
+    QFile file("resources/login_info.json");
+    if (file.open(QIODevice::ReadOnly)) {
+        QByteArray data = file.readAll();
+        return QString(data);
+    }
+    return QString();
+}
+
+static void clearLoginInfo() {
+    QFile file("resources/login_info.json");
+    file.remove();
+}
+
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
+
+    QString jsonStr = loadLoginInfo();
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
+    QJsonObject loginInfo = jsonDoc.object();
 
     ConfigManager configManager("resources/config.json");
     QSystemTrayIcon trayIcon(QIcon("resources/icon.png"));
@@ -23,33 +77,84 @@ int main(int argc, char* argv[]) {
     QAction loginAction("Login to ScreenMe", &trayMenu);
     QAction takeScreenshotAction("Take Screenshot", &trayMenu);
     QAction takeFullscreenScreenshotAction("Take Fullscreen Screenshot", &trayMenu);
+    QAction aboutAction("About...", &trayMenu);
+    QAction helpAction("❓Help", &trayMenu);
+    QAction reportBugAction("🛠️ Report a bug", &trayMenu);
     QAction optionsAction("Options", &trayMenu);
     QAction exitAction("Exit", &trayMenu);
 
-    trayMenu.addAction(&loginAction);
-    trayMenu.addSeparator();
+    QAction myGalleryAction("My Gallery", &trayMenu);
+    QAction logoutAction("Logout", &trayMenu);
+
+    if (loginInfo.isEmpty()) {
+        trayMenu.addAction(&loginAction);
+        trayMenu.addSeparator();
+    }
+    else {
+        QString nickname = loginInfo["nickname"].toString();
+        trayMenu.addAction(&myGalleryAction);
+        trayMenu.addAction(&logoutAction);
+        trayMenu.addSeparator();
+        myGalleryAction.setText("My Gallery (" + nickname + ")");
+    }
+   
     trayMenu.addAction(&takeScreenshotAction);
     trayMenu.addAction(&takeFullscreenScreenshotAction);
+    trayMenu.addSeparator();
+    trayMenu.addAction(&aboutAction);
+    trayMenu.addAction(&helpAction);
+    trayMenu.addAction(&reportBugAction);
+    trayMenu.addSeparator();
     trayMenu.addAction(&optionsAction);
     trayMenu.addAction(&exitAction);
     trayIcon.setContextMenu(&trayMenu);
     trayIcon.setToolTip("Press the configured key combination to take a screenshot");
 
-    LoginLoader* loginLoader = new LoginLoader();
-    LoginServer* loginServer = new LoginServer();
+
+    LoginServer loginServer;
+    LoginLoader loginLoader;
 
     QObject::connect(&loginAction, &QAction::triggered, [&]() {
-        LoginLoader* loader = new LoginLoader();
-        loader->show();
+        QDesktopServices::openUrl(QUrl(screenMeHost + "/login"));
+        loginLoader.show();
+    });
 
-        QDesktopServices::openUrl(QUrl("https://42-media.allods-developers.eu/login"));
+    QObject::connect(&loginServer, &LoginServer::userLoggedIn, &loginLoader, &LoginLoader::close);
+    QObject::connect(&loginServer, &LoginServer::userLoggedIn, [&](const QString& id, const QString& email, const QString& nickname) {
+        saveLoginInfo(id, email, nickname);
+
+        trayIcon.showMessage("Login Successful", "Connected as " + nickname, QSystemTrayIcon::Information, 3000);
+
+        trayMenu.removeAction(&loginAction);
+        trayMenu.insertAction(&takeScreenshotAction, &myGalleryAction);
+        trayMenu.insertAction(&takeScreenshotAction, &logoutAction);
+        trayMenu.insertSeparator(&logoutAction);
+        myGalleryAction.setText("My Gallery (" + nickname + ")");
+    });
+
+    QObject::connect(&myGalleryAction, &QAction::triggered, [&]() {
+        QString jsonStr = loadLoginInfo();
+        if (!jsonStr.isEmpty()) {
+            QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
+            QJsonObject loginInfo = jsonDoc.object();
+            QString nickname = loginInfo["nickname"].toString();
+            QDesktopServices::openUrl(QUrl(screenMeHost + "/gallery"));
+        }
+    });
+
+    QObject::connect(&logoutAction, &QAction::triggered, [&]() {
+        clearLoginInfo();
+        trayMenu.removeAction(&myGalleryAction);
+        trayMenu.removeAction(&logoutAction);
+        trayMenu.insertAction(&takeScreenshotAction, &loginAction);
+        trayMenu.insertSeparator(&loginAction);
     });
 
     QObject::connect(&exitAction, &QAction::triggered, &app, &QApplication::quit);
 
 
     MainWindow mainWindow(&configManager);
-    mainWindow.hide(); // Ensure the main window is hidden
+    mainWindow.hide();
 
     QObject::connect(&takeScreenshotAction, &QAction::triggered, [&]() {
         mainWindow.takeScreenshot();
@@ -59,12 +164,22 @@ int main(int argc, char* argv[]) {
         mainWindow.takeFullscreenScreenshot();
     });
 
+    QObject::connect(&aboutAction, &QAction::triggered, [&]() {
+        showAboutDialog();
+    });
+
+    QObject::connect(&helpAction, &QAction::triggered, [&]() {
+        QDesktopServices::openUrl(QUrl(screenMeHost + "/help"));
+    });
+
+    QObject::connect(&reportBugAction, &QAction::triggered, [&]() {
+        QDesktopServices::openUrl(QUrl("https://github.com/Sorok-Dva/ScreenMe/issues"));
+    });
+
     QObject::connect(&optionsAction, &QAction::triggered, [&]() {
         OptionsWindow optionsWindow(&configManager);
         optionsWindow.exec();
     });
-
-    QObject::connect(&exitAction, &QAction::triggered, &app, &QApplication::quit);
 
     trayIcon.show();
 
