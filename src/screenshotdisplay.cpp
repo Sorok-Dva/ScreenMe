@@ -335,7 +335,8 @@ void ScreenshotDisplay::copySelectionToClipboard() {
 void ScreenshotDisplay::updateTooltip() {
     if (selectionRect.isValid()) {
         QString tooltipText = QString("Size: %1 x %2").arg(selectionRect.width()).arg(selectionRect.height());
-        QToolTip::showText(mapToGlobal(selectionRect.topRight()), tooltipText, this);
+        QPoint tooltipPosition = selectionRect.topRight() + QPoint(10, -20);
+        QToolTip::showText(mapToGlobal(tooltipPosition), tooltipText, this);
     }
 }
 
