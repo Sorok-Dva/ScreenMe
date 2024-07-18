@@ -12,6 +12,7 @@
 #include <QTextEdit>
 #include "editor.h"
 #include "config_manager.h"
+#include "customTextEdit.h"
 
 class ScreenshotDisplay : public QWidget {
     Q_OBJECT
@@ -87,12 +88,14 @@ private:
 
     int borderWidth;
 
+    QVBoxLayout* actionLayout;
+
     QColor currentColor;
     Editor::Tool currentTool;
     QFont currentFont;
 
     QString text;
-    QTextEdit* textEdit;
+    CustomTextEdit* textEdit;
     QScopedPointer<Editor> editor;
     ConfigManager* configManager;
 

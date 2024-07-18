@@ -35,6 +35,10 @@ void ScreenshotDisplay::initializeEditor() {
     editor.reset(new Editor(this));
     connect(editor.get(), &Editor::toolChanged, this, &ScreenshotDisplay::onToolSelected);
     connect(editor.get(), &Editor::colorChanged, this, [this](const QColor& color) {
+        currentColor = color;
+        if (textEdit) {
+            textEdit->setTextColor(currentColor);
+        }
         update();
     });
     connect(editor.get(), &Editor::saveRequested, this, &ScreenshotDisplay::onSaveRequested);
@@ -100,7 +104,7 @@ void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
     }
     else if (editor->getCurrentTool() == Editor::Text) {
         if (!textEdit) {
-            textEdit = new QTextEdit(this);
+            textEdit = new CustomTextEdit(this);
             textEdit->setFont(currentFont);
             textEdit->setTextColor(currentColor);
             textEdit->setStyleSheet("background: transparent;");
@@ -111,6 +115,7 @@ void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
             textEdit->show();
             textEdit->setFocus();
             textEditPosition = event->pos();
+            connect(textEdit, &CustomTextEdit::focusOut, this, &ScreenshotDisplay::finalizeTextEdit);
             connect(textEdit, &QTextEdit::textChanged, this, &ScreenshotDisplay::adjustTextEditSize);
         }
         else {

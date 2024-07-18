@@ -7,7 +7,7 @@ CONFIG += c++17 cmdline
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 HEADERS += \
-    include/DraggableTextItem.h \
+    include/customTextInput.h \
     include/config_manager.h \
     include/editor.h \
     include/options_window.h \
@@ -22,7 +22,7 @@ HEADERS += \
 
 SOURCES += \
         main.cpp \
-        src/DraggableTextItem.cpp \
+        src/customTextInput.cpp \
         src/config_manager.cpp \
         src/editor.cpp \
         src/options_window.cpp \
