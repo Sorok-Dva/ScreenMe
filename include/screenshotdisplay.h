@@ -9,6 +9,7 @@
 #include <QWheelEvent>
 #include <QPainterPath>
 #include <QGraphicsOpacityEffect>
+#include <QTextEdit>
 #include "editor.h"
 #include "config_manager.h"
 
@@ -62,6 +63,8 @@ private:
     Qt::CursorShape cursorForHandle(HandlePosition handle);
     void drawBorderCircle(QPainter& painter, const QPoint& position);
     void saveStateForUndo();
+    void adjustTextEditSize();
+    void finalizeTextEdit();
 
     QPixmap originalPixmap;
     QPixmap drawingPixmap;
@@ -94,6 +97,9 @@ private:
     QRect textBoundingRect;
     QString text;
     QFont currentFont;
+
+    QTextEdit* textEdit;
+    QPoint textEditPosition;
 };
 
 #endif // SCREENSHOTDISPLAY_H

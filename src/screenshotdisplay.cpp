@@ -73,6 +73,10 @@ void ScreenshotDisplay::closeEvent(QCloseEvent* event) {
     if (editor) {
         editor->hide();
     }
+    if (textEdit) {
+        textEdit->deleteLater();
+        textEdit = nullptr;
+    }
     QWidget::closeEvent(event);
 }
 
@@ -94,18 +98,25 @@ void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
             currentHandle = None;
             movingSelection = false;
         }
-    } else if (editor->getCurrentTool() == Editor::Text) {
-        if (textBoundingRect.contains(event->pos())) {
-            bool ok;
-            QString newText = QInputDialog::getText(this, "Input Text", "Enter your text:", QLineEdit::Normal, text, &ok);
-            if (ok && !newText.isEmpty()) {
-                text = newText;
-                QFontMetrics fm(currentFont);
-                textBoundingRect = QRect(event->pos(), fm.size(0, text));
-                update();
-            }
+    }
+    else if (editor->getCurrentTool() == Editor::Text) {
+        if (!textEdit) {
+            textEdit = new QTextEdit(this);
+            textEdit->setFont(currentFont);
+            textEdit->setTextColor(currentColor);
+            textEdit->setStyleSheet("background: transparent;");
+            textEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+            textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+            textEdit->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+            textEdit->move(event->pos());
+            textEdit->show();
+            textEdit->setFocus();
+            textEditPosition = event->pos();
+            connect(textEdit, &QTextEdit::textChanged, this, &ScreenshotDisplay::adjustTextEditSize);
         }
-        update();
+        else {
+            finalizeTextEdit();
+        }
     } else {
         saveStateForUndo();
         drawing = true;
@@ -162,12 +173,10 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
         editor->show();
     }
 
-    // Redraw selection rectangle if selection is valid
     if (selectionRect.isValid()) {
         update();
     }
 
-    // Update border circle position
     if (editor->getCurrentTool() != Editor::None) {
         update();
     }
@@ -199,9 +208,6 @@ void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
         case Editor::Arrow:
             drawArrow(painter, lastPoint, drawingEnd);
             break;
-        case Editor::Text:
-            // Implement text drawing
-            break;
         default:
             break;
         }
@@ -216,8 +222,13 @@ void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
 
 void ScreenshotDisplay::keyPressEvent(QKeyEvent* event) {
     if (editor->getCurrentTool() != Editor::None && event->key() == Qt::Key_Escape) {
-        editor->deselectTools();
-        setCursor(Qt::ArrowCursor);
+        if (editor->getCurrentTool() == Editor::Text && textEdit) {
+            finalizeTextEdit();
+        }
+        else {
+            editor->deselectTools();
+            setCursor(Qt::ArrowCursor);
+        }
     }
     else if (event->key() == Qt::Key_Escape) {
         close();
@@ -235,18 +246,17 @@ void ScreenshotDisplay::wheelEvent(QWheelEvent* event) {
         if (borderWidth > 20) borderWidth = 20;
         update();
     }
-    if (editor->getCurrentTool() == Editor::Text) {
+    if (editor->getCurrentTool() == Editor::Text && textEdit) {
         int delta = event->angleDelta().y() / 120;
         int newSize = currentFont.pointSize() + delta;
         if (newSize > 0) {
             currentFont.setPointSize(newSize);
-            QFontMetrics fm(currentFont);
-            textBoundingRect = QRect(textBoundingRect.topLeft(), fm.size(0, text));
+            textEdit->setFont(currentFont);
+            adjustTextEditSize();
             update();
         }
         return;
     }
-
 }
 
 void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
@@ -284,6 +294,7 @@ void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
             break;
         case Editor::Text:
             painter.setFont(currentFont);
+            painter.setPen(QPen(editor->getCurrentColor()));
             painter.drawText(textBoundingRect, Qt::AlignLeft, text);
             break;
         default:
@@ -475,6 +486,36 @@ void ScreenshotDisplay::drawBorderCircle(QPainter& painter, const QPoint& positi
     painter.setPen(QPen(editor->getCurrentColor(), 2, Qt::SolidLine));
     painter.setBrush(Qt::NoBrush);
     painter.drawEllipse(position, borderWidth, borderWidth);
+}
+
+void ScreenshotDisplay::adjustTextEditSize() {
+    QFontMetrics fm(textEdit->font());
+    int width = fm.horizontalAdvance(textEdit->toPlainText().replace('\n', ' ')) + 10;
+    textEdit->setFixedSize(width, textEdit->height());
+}
+
+void ScreenshotDisplay::finalizeTextEdit() {
+    if (textEdit) {
+        saveStateForUndo();
+        QPainter painter(&drawingPixmap);
+        painter.setFont(textEdit->font());
+        painter.setPen(QPen(editor->getCurrentColor()));
+
+        QFontMetrics fm(textEdit->font());
+        QStringList lines = textEdit->toPlainText().split('\n');
+        QPoint currentPos = textEditPosition;
+
+        currentPos.setY(currentPos.y() + fm.ascent());
+
+        for (const QString& line : lines) {
+            painter.drawText(currentPos, line);
+            currentPos.setY(currentPos.y() + fm.height());
+        }
+
+        textEdit->deleteLater();
+        textEdit = nullptr;
+        update();
+    }
 }
 
 void ScreenshotDisplay::saveStateForUndo() {
