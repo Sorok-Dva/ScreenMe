@@ -17,7 +17,7 @@
 
 ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent, ConfigManager* configManager)
     : QWidget(parent), originalPixmap(pixmap), selectionStarted(false), movingSelection(false), currentHandle(None), editor(nullptr), configManager(configManager),
-    drawing(false), shapeDrawing(false), currentColor(Qt::black), currentTool(Editor::None), borderWidth(2), 
+    drawing(false), shapeDrawing(false), currentColor(Qt::black), currentTool(Editor::None), borderWidth(5), 
     drawingPixmap(pixmap.size()), currentFont("Arial", 16), text("Editable Text") {
 
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
@@ -40,6 +40,9 @@ ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent, Con
             close();
         }
     });
+
+    QShortcut* undoShortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Z), this);
+    connect(undoShortcut, &QShortcut::activated, this, &ScreenshotDisplay::undo);
 
     QShortcut* copyShortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_C), this);
     connect(copyShortcut, &QShortcut::activated, this, &ScreenshotDisplay::copySelectionToClipboard);
@@ -104,6 +107,7 @@ void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
         }
         update();
     } else {
+        saveStateForUndo();
         drawing = true;
         lastPoint = event->pos();
         origin = event->pos();
@@ -176,6 +180,8 @@ void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
     drawing = false;
 
     if (shapeDrawing) {
+        saveStateForUndo();
+
         QPixmap tempPixmap = drawingPixmap.copy();
         QPainter painter(&tempPixmap);
         painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
@@ -465,10 +471,20 @@ void ScreenshotDisplay::drawArrow(QPainter& painter, const QPoint& start, const 
     painter.drawPolygon(arrowHead);
 }
 
-
-
 void ScreenshotDisplay::drawBorderCircle(QPainter& painter, const QPoint& position) {
     painter.setPen(QPen(editor->getCurrentColor(), 2, Qt::SolidLine));
     painter.setBrush(Qt::NoBrush);
     painter.drawEllipse(position, borderWidth, borderWidth);
+}
+
+void ScreenshotDisplay::saveStateForUndo() {
+    undoStack.push(drawingPixmap);
+}
+
+void ScreenshotDisplay::undo() {
+    if (!undoStack.empty()) {
+        drawingPixmap = undoStack.top();
+        undoStack.pop();
+        update();
+    }
 }

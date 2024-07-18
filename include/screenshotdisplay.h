@@ -1,6 +1,7 @@
 #ifndef SCREENSHOTDISPLAY_H
 #define SCREENSHOTDISPLAY_H
 
+#include <stack> 
 #include <QWidget>
 #include <QPixmap>
 #include <QLabel>
@@ -34,8 +35,10 @@ private slots:
     void onPublishRequested();
     void onCloseRequested();
     void copySelectionToClipboard();
+    void undo();
 
 private:
+    std::stack<QPixmap> undoStack;
     enum HandlePosition {
         None,
         TopLeft,
@@ -58,6 +61,7 @@ private:
     void updateEditorPosition();
     Qt::CursorShape cursorForHandle(HandlePosition handle);
     void drawBorderCircle(QPainter& painter, const QPoint& position);
+    void saveStateForUndo();
 
     QPixmap originalPixmap;
     QPixmap drawingPixmap;
