@@ -43,7 +43,6 @@ void ScreenshotDisplay::initializeEditor() {
     connect(editor.get(), &Editor::closeRequested, this, &ScreenshotDisplay::onCloseRequested);
 }
 
-
 void ScreenshotDisplay::configureShortcuts() {
     QShortcut* escapeShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
     connect(escapeShortcut, &QShortcut::activated, [this]() {
@@ -72,6 +71,11 @@ void ScreenshotDisplay::closeEvent(QCloseEvent* event) {
         textEdit->deleteLater();
         textEdit = nullptr;
     }
+
+    while (!undoStack.empty()) {
+        undoStack.pop();
+    }
+
     QWidget::closeEvent(event);
 }
 
