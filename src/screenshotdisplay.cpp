@@ -187,6 +187,12 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
         updateTooltip();
         updateEditorPosition();
     }
+    else if (currentHandle != None) {
+        resizeSelection(event->pos());
+        update();
+        updateTooltip();
+        updateEditorPosition();
+    }
 
     HandlePosition handle = handleAtPoint(event->pos());
     setCursor(cursorForHandle(handle));
@@ -482,35 +488,40 @@ ScreenshotDisplay::HandlePosition ScreenshotDisplay::handleAtPoint(const QPoint&
 
 void ScreenshotDisplay::resizeSelection(const QPoint& point) {
     QRect screenRect = QApplication::primaryScreen()->geometry();
+    QRect newRect = selectionRect;
+
     switch (currentHandle) {
     case TopLeft:
-        selectionRect.setTopLeft(point);
+        newRect.setTopLeft(point);
         break;
     case TopRight:
-        selectionRect.setTopRight(point);
+        newRect.setTopRight(point);
         break;
     case BottomLeft:
-        selectionRect.setBottomLeft(point);
+        newRect.setBottomLeft(point);
         break;
     case BottomRight:
-        selectionRect.setBottomRight(point);
+        newRect.setBottomRight(point);
         break;
     case Top:
-        selectionRect.setTop(point.y());
+        newRect.setTop(point.y());
         break;
     case Bottom:
-        selectionRect.setBottom(point.y());
+        newRect.setBottom(point.y());
         break;
     case Left:
-        selectionRect.setLeft(point.x());
+        newRect.setLeft(point.x());
         break;
     case Right:
-        selectionRect.setRight(point.x());
+        newRect.setRight(point.x());
         break;
     default:
         break;
     }
-    selectionRect = selectionRect.normalized().intersected(screenRect);
+
+    newRect = newRect.normalized().intersected(screenRect);
+
+    selectionRect = newRect;
 }
 
 Qt::CursorShape ScreenshotDisplay::cursorForHandle(HandlePosition handle) {
