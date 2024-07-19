@@ -13,7 +13,7 @@ public:
     explicit LoginServer(QObject* parent = nullptr);
 
 signals:
-    void userLoggedIn(const QString& id, const QString& nickname, const QString& email);
+    void userLoggedIn(const QString& id, const QString& email, const QString& nickname, const QString& token);
 
 public slots:
     void onNewConnection();

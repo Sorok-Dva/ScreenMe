@@ -13,11 +13,11 @@
 #include "include/login_loader.h"
 #include "include/login_server.h"
 #include <include/main_window.h>
+#include <include/utils.h>
 
 using namespace std;
 
 const QString VERSION = "1.0.2";
-const QString screenMeHost = "http://localhost:3001";
 
 static void showAboutDialog() {
     QMessageBox aboutBox;
@@ -29,38 +29,11 @@ static void showAboutDialog() {
         "<span style=\"color: green\">Contribute on GitHub ! </span> : <a href=\"https://github.com/Sorok-Dva/ScreenMe\">Github Repository</a><br><br>"
     );
     aboutBox.setInformativeText(
-        "Terms of use of ScreenMe : <a href=\"" + screenMeHost + "/terms-of-use\">" + screenMeHost + "/terms-of-use</a><br><br>"
+        "Terms of use of ScreenMe : <a href=\"" + SCREEN_ME_HOST + "/terms-of-use\">" + SCREEN_ME_HOST + "/terms-of-use</a><br><br>"
         "© 2024 Developed by <a href=\"https://github.com/Sorok-Dva\">Сорок два</a>. <b>All rights reserved.</b>"
     );
     aboutBox.setIconPixmap(QPixmap("resources/icon.png"));
     aboutBox.exec();
-}
-
-static void saveLoginInfo(const QString& id, const QString& email, const QString& nickname) {
-    QFile file("resources/login_info.json");
-    if (file.open(QIODevice::WriteOnly)) {
-        QJsonObject jsonObj;
-        jsonObj["id"] = id;
-        jsonObj["email"] = email;
-        jsonObj["nickname"] = nickname;
-
-        QJsonDocument jsonDoc(jsonObj);
-        file.write(jsonDoc.toJson());
-    }
-}
-
-static QString loadLoginInfo() {
-    QFile file("resources/login_info.json");
-    if (file.open(QIODevice::ReadOnly)) {
-        QByteArray data = file.readAll();
-        return QString(data);
-    }
-    return QString();
-}
-
-static void clearLoginInfo() {
-    QFile file("resources/login_info.json");
-    file.remove();
 }
 
 int main(int argc, char* argv[]) {
@@ -115,13 +88,13 @@ int main(int argc, char* argv[]) {
     LoginLoader loginLoader;
 
     QObject::connect(&loginAction, &QAction::triggered, [&]() {
-        QDesktopServices::openUrl(QUrl(screenMeHost + "/login"));
+        QDesktopServices::openUrl(QUrl(SCREEN_ME_HOST + "/login"));
         loginLoader.show();
     });
 
     QObject::connect(&loginServer, &LoginServer::userLoggedIn, &loginLoader, &LoginLoader::close);
-    QObject::connect(&loginServer, &LoginServer::userLoggedIn, [&](const QString& id, const QString& email, const QString& nickname) {
-        saveLoginInfo(id, email, nickname);
+    QObject::connect(&loginServer, &LoginServer::userLoggedIn, [&](const QString& id, const QString& email, const QString& nickname, const QString& token) {
+        saveLoginInfo(id, email, nickname, token);
 
         trayIcon.showMessage("Login Successful", "Connected as " + nickname, QSystemTrayIcon::Information, 3000);
 
@@ -138,7 +111,7 @@ int main(int argc, char* argv[]) {
             QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
             QJsonObject loginInfo = jsonDoc.object();
             QString nickname = loginInfo["nickname"].toString();
-            QDesktopServices::openUrl(QUrl(screenMeHost + "/gallery"));
+            QDesktopServices::openUrl(QUrl(SCREEN_ME_HOST + "/gallery"));
         }
     });
 
@@ -169,7 +142,7 @@ int main(int argc, char* argv[]) {
     });
 
     QObject::connect(&helpAction, &QAction::triggered, [&]() {
-        QDesktopServices::openUrl(QUrl(screenMeHost + "/help"));
+        QDesktopServices::openUrl(QUrl(SCREEN_ME_HOST + "/help"));
     });
 
     QObject::connect(&reportBugAction, &QAction::triggered, [&]() {

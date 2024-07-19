@@ -37,7 +37,8 @@ void LoginServer::processTextMessage(QString message) {
         QString id = data["id"].toString();
         QString nickname = data["nickname"].toString();
         QString email = data["email"].toString();
-        emit userLoggedIn(id, nickname, email);
+        QString token = data["token"].toString();
+        emit userLoggedIn(id, email, nickname, token);
     }
     else {
         qDebug() << "Received unknown message type";

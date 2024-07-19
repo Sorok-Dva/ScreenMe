@@ -5,6 +5,10 @@
 #include <QApplication>
 #include <QPixmap>
 #include <QDebug>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QString>
 
 QString getUniqueFilePath(const QString& folder, const QString& baseName, const QString& extension) {
     QDir dir(folder);
@@ -36,4 +40,32 @@ void displayScreenshotOnScreen(const QPixmap& pixmap) {
     ScreenshotDisplay* displayWidget = new ScreenshotDisplay(pixmap);
     displayWidget->setGeometry(QApplication::primaryScreen()->geometry());
     displayWidget->show();
+}
+
+void saveLoginInfo(const QString& id, const QString& email, const QString& nickname, const QString& token) {
+    QFile file("resources/login_info.json");
+    if (file.open(QIODevice::WriteOnly)) {
+        QJsonObject jsonObj;
+        jsonObj["id"] = id;
+        jsonObj["email"] = email;
+        jsonObj["nickname"] = nickname;
+        jsonObj["token"] = token;
+
+        QJsonDocument jsonDoc(jsonObj);
+        file.write(jsonDoc.toJson());
+    }
+}
+
+QString loadLoginInfo() {
+    QFile file("resources/login_info.json");
+    if (file.open(QIODevice::ReadOnly)) {
+        QByteArray data = file.readAll();
+        return QString(data);
+    }
+    return QString();
+}
+
+void clearLoginInfo() {
+    QFile file("resources/login_info.json");
+    file.remove();
 }
