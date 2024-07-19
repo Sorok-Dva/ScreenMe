@@ -150,7 +150,9 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
         update();
     }
     if (selectionStarted) {
-        selectionRect = QRect(origin, event->pos()).normalized();
+        QRect newRect = QRect(origin, event->pos()).normalized();
+        QRect screenRect = QApplication::primaryScreen()->geometry();
+        selectionRect = newRect.intersected(screenRect);
         update();
         updateTooltip();
         updateEditorPosition();
@@ -170,7 +172,17 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
         update();
     }
     else if (movingSelection) {
-        selectionRect.moveTopLeft(event->pos() - selectionOffset);
+        QPoint topLeft = event->pos() - selectionOffset;
+        QRect screenRect = QApplication::primaryScreen()->geometry();
+        if (topLeft.x() < 0) topLeft.setX(0);
+        if (topLeft.y() < 0) topLeft.setY(0);
+        if (topLeft.x() + selectionRect.width() > screenRect.width()) {
+            topLeft.setX(screenRect.width() - selectionRect.width());
+        }
+        if (topLeft.y() + selectionRect.height() > screenRect.height()) {
+            topLeft.setY(screenRect.height() - selectionRect.height());
+        }
+        selectionRect.moveTopLeft(topLeft);
         update();
         updateTooltip();
         updateEditorPosition();
@@ -257,10 +269,24 @@ void ScreenshotDisplay::wheelEvent(QWheelEvent* event) {
 void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event);
     QPainter painter(this);
-    painter.drawPixmap(0, 0, originalPixmap);
-    painter.drawPixmap(0, 0, drawingPixmap);
+
+    QPixmap transparentPixmap(originalPixmap.size());
+    transparentPixmap.fill(Qt::transparent);
+
+    QPainter transparentPainter(&transparentPixmap);
+    transparentPainter.setOpacity(0.6);
+    transparentPainter.drawPixmap(0, 0, originalPixmap);
+    transparentPainter.drawPixmap(0, 0, drawingPixmap);
+
+    painter.drawPixmap(0, 0, transparentPixmap);
 
     if (selectionRect.isValid()) {
+        QPixmap selectedPixmap = originalPixmap.copy(selectionRect);
+        painter.drawPixmap(selectionRect.topLeft(), selectedPixmap);
+
+        QPixmap selectedDrawingPixmap = drawingPixmap.copy(selectionRect);
+        painter.drawPixmap(selectionRect.topLeft(), selectedDrawingPixmap);
+
         painter.setPen(QPen(Qt::red, 2, Qt::DashLine));
         painter.drawRect(selectionRect);
         drawHandles(painter);
@@ -455,6 +481,7 @@ ScreenshotDisplay::HandlePosition ScreenshotDisplay::handleAtPoint(const QPoint&
 }
 
 void ScreenshotDisplay::resizeSelection(const QPoint& point) {
+    QRect screenRect = QApplication::primaryScreen()->geometry();
     switch (currentHandle) {
     case TopLeft:
         selectionRect.setTopLeft(point);
@@ -483,7 +510,7 @@ void ScreenshotDisplay::resizeSelection(const QPoint& point) {
     default:
         break;
     }
-    selectionRect = selectionRect.normalized();
+    selectionRect = selectionRect.normalized().intersected(screenRect);
 }
 
 Qt::CursorShape ScreenshotDisplay::cursorForHandle(HandlePosition handle) {
@@ -513,7 +540,18 @@ void ScreenshotDisplay::onToolSelected(Editor::Tool tool) {
 void ScreenshotDisplay::updateEditorPosition() {
     if (selectionRect.isValid()) {
         const int margin = 10;
-        editor->move(selectionRect.topRight() + QPoint(margin, margin));
+        QPoint editorPos = selectionRect.topRight() + QPoint(margin, margin);
+
+        QRect screenRect = QApplication::primaryScreen()->geometry();
+        QSize editorSize = editor->sizeHint();
+
+        if (editorPos.x() + editorSize.width() > screenRect.width()) {
+            editorPos.setX(screenRect.width() - editorSize.width() - margin);
+        }
+        if (editorPos.y() + editorSize.height() > screenRect.height()) {
+            editorPos.setY(screenRect.height() - editorSize.height() - margin);
+        }
+        editor->move(editorPos);
     }
 }
 
