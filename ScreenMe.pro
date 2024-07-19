@@ -1,6 +1,6 @@
 QT = core gui widgets
 
-CONFIG += c++17 cmdline
+CONFIG += windows
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.

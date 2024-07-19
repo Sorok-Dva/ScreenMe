@@ -1,5 +1,6 @@
 ﻿#include <Windows.h>
 #include <iostream>
+#include <QMainWindow>
 #include <QApplication>
 #include <QSystemTrayIcon>
 #include <QDesktopServices>
@@ -36,8 +37,14 @@ static void showAboutDialog() {
     aboutBox.exec();
 }
 
-int main(int argc, char* argv[]) {
-    QApplication app(argc, argv);
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
+{
+    int argc = 0;
+    QApplication app(argc, 0);
+    #ifdef _WIN32
+        // Ensure the console window does not appear on Windows
+        FreeConsole();
+    #endif
 
     QString jsonStr = loadLoginInfo();
     QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
@@ -82,7 +89,6 @@ int main(int argc, char* argv[]) {
     trayMenu.addAction(&exitAction);
     trayIcon.setContextMenu(&trayMenu);
     trayIcon.setToolTip("Press the configured key combination to take a screenshot");
-
 
     LoginServer loginServer;
     LoginLoader loginLoader;

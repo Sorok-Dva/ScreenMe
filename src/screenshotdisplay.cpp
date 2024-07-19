@@ -10,6 +10,7 @@
 #include <QJsonDocument>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QProgressDialog>
 #include <QClipboard>
 #include <QPainter>
 #include <QMouseEvent>
@@ -391,10 +392,27 @@ void ScreenshotDisplay::onPublishRequested() {
 
         multiPart->append(imagePart);
 
+        QProgressDialog* progressDialog = new QProgressDialog("Publishing screenshot", "Cancel", 0, 100, this);
+        progressDialog->setWindowModality(Qt::WindowModal);
+        progressDialog->setAutoClose(false);
+        progressDialog->setAutoReset(false);
+        progressDialog->show();
+
         QNetworkReply* reply = manager->post(request, multiPart);
         multiPart->setParent(reply);
 
-        connect(reply, &QNetworkReply::finished, this, [reply, file, tempFilePath, this]() {
+        connect(progressDialog, &QProgressDialog::canceled, reply, &QNetworkReply::abort);
+
+        connect(reply, &QNetworkReply::uploadProgress, this, [progressDialog](qint64 bytesSent, qint64 bytesTotal) {
+            if (bytesTotal > 0) {
+                progressDialog->setMaximum(bytesTotal);
+                progressDialog->setValue(bytesSent);
+            }
+        });
+
+        connect(reply, &QNetworkReply::finished, this, [reply, file, tempFilePath, this, progressDialog]() {
+            progressDialog->close();
+
             if (reply->error() == QNetworkReply::NoError) {
                 QByteArray response = reply->readAll();
                 QJsonDocument jsonResponse = QJsonDocument::fromJson(response);
@@ -404,7 +422,7 @@ void ScreenshotDisplay::onPublishRequested() {
 
                 QMessageBox msgBox(this);
                 msgBox.setWindowTitle("Screenshot Uploaded");
-                msgBox.setText("Screenshot uploaded successfully ! Link: " + link);
+                msgBox.setText("Screenshot uploaded successfully! Link: " + link);
                 QPushButton* copyButton = msgBox.addButton(tr("Copy"), QMessageBox::ActionRole);
                 msgBox.addButton(QMessageBox::Ok);
 
@@ -421,6 +439,7 @@ void ScreenshotDisplay::onPublishRequested() {
             reply->deleteLater();
             file->deleteLater();
             QFile::remove(tempFilePath);
+            delete progressDialog;
         });
     }
     close();
