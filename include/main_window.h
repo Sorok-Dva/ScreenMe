@@ -18,6 +18,7 @@ public slots:
     void takeFullscreenScreenshot();
     void handleHotkeyActivated(size_t id);
     void handleScreenshotClosed();
+    void reloadHotkeys();
 
 signals:
     void screenshotClosed();

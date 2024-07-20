@@ -20,7 +20,7 @@
 
 using namespace std;
 
-const QString VERSION = "1.0.2";
+const QString VERSION = "1.1.0";
 
 static void showAboutDialog() {
     QMessageBox aboutBox;
@@ -43,10 +43,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
 {
     int argc = 0;
     QApplication app(argc, 0);
-#ifdef _WIN32
-    // Ensure the console window does not appear on Windows
-    FreeConsole();
-#endif
+    #ifdef _WIN32
+        // Ensure the console window does not appear on Windows
+        FreeConsole();
+    #endif
 
     QString jsonStr = loadLoginInfo();
     QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
@@ -158,6 +158,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
 
     QObject::connect(&optionsAction, &QAction::triggered, [&]() {
         OptionsWindow optionsWindow(&configManager);
+        QObject::connect(&optionsWindow, &OptionsWindow::reloadHotkeys, &mainWindow, &MainWindow::reloadHotkeys);
         optionsWindow.exec();
     });
 
@@ -165,7 +166,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
 
     QObject::connect(&trayIcon, &QSystemTrayIcon::activated, [&](QSystemTrayIcon::ActivationReason reason) {
         if (reason == QSystemTrayIcon::Trigger) {
-            mainWindow.takeScreenshot(); // Take screenshot on left-click
+            mainWindow.takeScreenshot();
         }
     });
 

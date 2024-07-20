@@ -16,6 +16,9 @@ class OptionsWindow : public QDialog {
 public:
     explicit OptionsWindow(ConfigManager* configManager, QWidget* parent = nullptr);
 
+signals:
+    void reloadHotkeys();
+
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;

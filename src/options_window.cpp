@@ -92,6 +92,9 @@ void OptionsWindow::saveOptions() {
     config["start_with_system"] = startWithSystemCheckbox->isChecked();
 
     configManager->saveConfig(config);
+
+    emit reloadHotkeys();
+
     accept();
 }
 

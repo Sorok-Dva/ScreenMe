@@ -5,6 +5,7 @@
 #include <QPixmap>
 #include <QJsonObject>
 #include <QDebug>
+#include "include/options_window.h"
 #include "include/screenshotdisplay.h"
 #include "include/uglobalhotkeys.h"
 
@@ -29,6 +30,22 @@ MainWindow::MainWindow(ConfigManager* configManager, QWidget* parent)
     }
 
     connect(hotkeyManager, &UGlobalHotkeys::activated, this, &MainWindow::handleHotkeyActivated);
+}
+
+void MainWindow::reloadHotkeys() {
+    hotkeyManager->unregisterAllHotkeys();
+
+    QJsonObject config = configManager->loadConfig();
+    QString screenshotHotkey = config["screenshot_hotkey"].toString();
+    QString fullscreenHotkey = config["fullscreen_hotkey"].toString();
+
+    if (!screenshotHotkey.isEmpty()) {
+        hotkeyManager->registerHotkey(screenshotHotkey, 1);
+    }
+
+    if (!fullscreenHotkey.isEmpty()) {
+        hotkeyManager->registerHotkey(fullscreenHotkey, 2);
+    }
 }
 
 void MainWindow::takeScreenshot() {

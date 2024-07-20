@@ -1,5 +1,5 @@
 {
-    "default_save_folder": "C:/Users/Llyam/Pictures/ScreenMe",
+    "default_save_folder": "~/Pictures/ScreenMe",
     "file_extension": "png",
     "fullscreen_hotkey": "Ctrl+Shift+Print",
     "image_quality": 100,
