@@ -3,11 +3,14 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QFileDialog>
-#include <QKeyEvent>
 #include <QJsonObject>
 #include <QSet>
+#include <QEvent>
+#include <QKeyEvent>
 #include <QKeySequence>
+#include <QCheckBox>
 #include <QDebug>
+#include "include/globalKeyboardHook.h"
 
 OptionsWindow::OptionsWindow(ConfigManager* configManager, QWidget* parent)
     : QDialog(parent), configManager(configManager), hotkeyEditing(nullptr) {
@@ -62,6 +65,11 @@ OptionsWindow::OptionsWindow(ConfigManager* configManager, QWidget* parent)
     connect(saveButton, &QPushButton::clicked, this, &OptionsWindow::saveOptions);
 
     loadOptions();
+
+    // Hook up the global keyboard hook
+    GlobalKeyboardHook* keyboardHook = new GlobalKeyboardHook(this);
+    connect(keyboardHook, &GlobalKeyboardHook::keyPressed, this, &OptionsWindow::handleGlobalKeyPress);
+    keyboardHook->start();
 }
 
 void OptionsWindow::loadOptions() {
@@ -110,34 +118,10 @@ void OptionsWindow::startRecordingFullscreenHotkey() {
     pressedKeys.clear();
 }
 
-void OptionsWindow::recordKey(QKeyEvent* event) {
-    int key = event->key();
-    if (key == Qt::Key_Control || key == Qt::Key_Shift || key == Qt::Key_Alt || key == Qt::Key_Meta) {
-        return;  // Ignore standalone modifier keys
+void OptionsWindow::handleGlobalKeyPress(QKeySequence keySequence) {
+    if (hotkeyEditing) {
+        hotkeyEditing->setText(keySequence.toString(QKeySequence::NativeText));
     }
-
-    QString keyString = QKeySequence(key | event->modifiers()).toString(QKeySequence::NativeText);
-    if (event->type() == QEvent::KeyPress) {
-        if (!pressedKeys.contains(key)) {
-            pressedKeys.insert(key);
-            if (!currentKeys.contains(keyString)) {
-                currentKeys += keyString + " ";
-            }
-        }
-    }
-    else if (event->type() == QEvent::KeyRelease) {
-        pressedKeys.remove(key);
-    }
-
-    hotkeyEditing->setText(currentKeys.trimmed());
-}
-
-void OptionsWindow::keyPressEvent(QKeyEvent* event) {
-    recordKey(event);
-}
-
-void OptionsWindow::keyReleaseEvent(QKeyEvent* event) {
-    recordKey(event);
 }
 
 bool OptionsWindow::eventFilter(QObject* watched, QEvent* event) {
@@ -150,10 +134,52 @@ bool OptionsWindow::eventFilter(QObject* watched, QEvent* event) {
         }
         return true;
     }
-    if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
-        QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
-        recordKey(keyEvent);
-        return true;
-    }
     return QDialog::eventFilter(watched, event);
+}
+
+void OptionsWindow::recordKey(QKeyEvent* event) {
+    int key = event->key();
+    QString keyString;
+
+    // Check for modifier keys
+    if (event->modifiers() & Qt::ControlModifier) {
+        keyString = "Ctrl";
+    }
+    else if (event->modifiers() & Qt::ShiftModifier) {
+        keyString = "Shift";
+    }
+    else if (event->modifiers() & Qt::AltModifier) {
+        keyString = "Alt";
+    }
+    else if (event->modifiers() & Qt::MetaModifier) {
+        keyString = "Meta";
+    }
+    else {
+        keyString = QKeySequence(key).toString(QKeySequence::NativeText);
+    }
+
+    if (event->type() == QEvent::KeyPress) {
+        if (!pressedKeys.contains(key)) {
+            pressedKeys.insert(key);
+            if (!currentKeys.contains(keyString)) {
+                if (!currentKeys.isEmpty()) {
+                    currentKeys += " + ";
+                }
+                currentKeys += keyString;
+            }
+        }
+    }
+    else if (event->type() == QEvent::KeyRelease) {
+        pressedKeys.remove(key);
+    }
+
+    hotkeyEditing->setText(currentKeys);
+}
+
+void OptionsWindow::keyPressEvent(QKeyEvent* event) {
+    //recordKey(event);
+}
+
+void OptionsWindow::keyReleaseEvent(QKeyEvent* event) {
+    //recordKey(event);
 }

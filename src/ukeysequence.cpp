@@ -40,7 +40,10 @@ static QString KeyToStr(int key) {
 void UKeySequence::FromString(const QString& str) {
     QStringList keys = str.split('+');
     for (int i = 0; i < keys.size(); i++) {
-        AddKey(keys[i]);
+        if (keys[i] == QString("Print"))
+            AddKey(0x2C);
+        else
+            AddKey(keys[i]);
     }
 }
 

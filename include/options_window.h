@@ -6,6 +6,8 @@
 #include <QComboBox>
 #include <QSpinBox>
 #include <QCheckBox>
+#include <QKeyEvent>
+#include <QSet>
 #include "config_manager.h"
 
 class OptionsWindow : public QDialog {
@@ -20,26 +22,26 @@ protected:
     void keyReleaseEvent(QKeyEvent* event) override;
 
 private slots:
+    void loadOptions();
     void saveOptions();
     void browseFolder();
     void startRecordingHotkey();
     void startRecordingFullscreenHotkey();
+    void handleGlobalKeyPress(QKeySequence keySequence);
 
 private:
+    void recordKey(QKeyEvent* event);
+
     ConfigManager* configManager;
     QLineEdit* hotkeyEdit;
     QLineEdit* fullscreenHotkeyEdit;
+    QLineEdit* hotkeyEditing;
     QComboBox* extensionCombo;
     QSpinBox* qualitySpinbox;
     QLineEdit* folderEdit;
     QCheckBox* startWithSystemCheckbox;
-
-    QLineEdit* hotkeyEditing;
     QString currentKeys;
     QSet<int> pressedKeys;
-
-    void loadOptions();
-    void recordKey(QKeyEvent* event);
 };
 
 #endif // OPTIONS_WINDOW_H

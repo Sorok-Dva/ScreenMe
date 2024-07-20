@@ -15,7 +15,8 @@
 #include "include/login_server.h"
 #include <include/main_window.h>
 #include <include/utils.h>
-#include <include/hotkeyEventFilter.h>
+#include "include/hotkeyEventFilter.h"
+#include "include/globalKeyboardHook.h"
 
 using namespace std;
 
@@ -130,9 +131,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
         trayMenu.insertSeparator(&loginAction);
     });
 
-    QObject::connect(&exitAction, &QAction::triggered, [&]() {
-        qApp->exit();
-    });
+    QObject::connect(&exitAction, &QAction::triggered, &app, &QApplication::quit);
 
     MainWindow mainWindow(&configManager);
     mainWindow.hide();
