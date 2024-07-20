@@ -9,12 +9,12 @@
 #include "include/uglobalhotkeys.h"
 
 MainWindow::MainWindow(ConfigManager* configManager, QWidget* parent)
-    : QWidget(parent), configManager(configManager), isScreenshotDisplayed(false) {
+    : QMainWindow(parent), configManager(configManager), isScreenshotDisplayed(false) {
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setGeometry(QGuiApplication::primaryScreen()->geometry());
 
     // Initialize UGlobalHotkeys
-    hotkeyManager = new UGlobalHotkeys();
+    hotkeyManager = new UGlobalHotkeys(this);
 
     QJsonObject config = configManager->loadConfig();
     QString screenshotHotkey = config["screenshot_hotkey"].toString();
@@ -48,6 +48,7 @@ void MainWindow::takeScreenshot() {
 }
 
 void MainWindow::takeFullscreenScreenshot() {
+    qDebug() << "takeFullscreenScreenshot";
     if (isScreenshotDisplayed) return;
 
     QScreen* screen = QGuiApplication::primaryScreen();

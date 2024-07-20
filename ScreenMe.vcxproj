@@ -107,12 +107,18 @@
   <ItemGroup>
     <ClCompile Include="src\customTextInput.cpp" />
     <ClCompile Include="src\editor.cpp" />
+    <ClCompile Include="src\hotkeyEventFilter.cpp" />
     <ClCompile Include="src\login_loader.cpp" />
     <ClCompile Include="src\login_server.cpp" />
     <ClCompile Include="src\main_window.cpp" />
     <ClCompile Include="src\screenshotdisplay.cpp" />
     <ClCompile Include="src\uexception.cpp" />
-    <ClCompile Include="src\uglobalhotkeys.cpp" />
+    <ClCompile Include="src\uglobalhotkeys.cpp">
+      <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">input</DynamicSource>
+      <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Filename).moc</QtMocFileName>
+      <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Release|x64'">input</DynamicSource>
+      <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename).moc</QtMocFileName>
+    </ClCompile>
     <ClCompile Include="src\ukeysequence.cpp" />
     <ClCompile Include="src\utils.cpp" />
     <ClCompile Include="main.cpp">
@@ -129,6 +135,7 @@
     <QtMoc Include="include\screenshotdisplay.h" />
     <QtMoc Include="include\editor.h" />
     <QtMoc Include="include\customTextEdit.h" />
+    <QtMoc Include="include\hotkeyEventFilter.h" />
     <ClInclude Include="include\hotkeymap.h" />
     <QtMoc Include="include\main_window.h" />
     <QtMoc Include="include\ukeysequence.h" />

@@ -13,6 +13,7 @@
 UGlobalHotkeys::UGlobalHotkeys(QWidget *parent)
     : QWidget(parent)
 {
+    //qApp->installNativeEventFilter((QAbstractNativeEventFilter*)this);
     #if defined(Q_OS_LINUX)
     qApp->installNativeEventFilter(this);
     QWindow wndw;
@@ -157,12 +158,11 @@ bool UGlobalHotkeys::winEvent(MSG * message, long * result) {
     return false;
 }
 
-bool UGlobalHotkeys::nativeEvent(const QByteArray &eventType,
-                                       void *message, long *result)
-{
+bool UGlobalHotkeys::nativeEvent(const QByteArray &eventType, void *message, long *result){
     Q_UNUSED(eventType);
     return winEvent((MSG*)message, result);
 }
+
 
 #elif defined(Q_OS_LINUX)
 

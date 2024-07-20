@@ -15,6 +15,7 @@
 #include "include/login_server.h"
 #include <include/main_window.h>
 #include <include/utils.h>
+#include <include/hotkeyEventFilter.h>
 
 using namespace std;
 
@@ -41,10 +42,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
 {
     int argc = 0;
     QApplication app(argc, 0);
-    #ifdef _WIN32
-        // Ensure the console window does not appear on Windows
-        FreeConsole();
-    #endif
+#ifdef _WIN32
+    // Ensure the console window does not appear on Windows
+    FreeConsole();
+#endif
 
     QString jsonStr = loadLoginInfo();
     QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
@@ -77,7 +78,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
         trayMenu.addSeparator();
         myGalleryAction.setText("My Gallery (" + nickname + ")");
     }
-   
+
     trayMenu.addAction(&takeScreenshotAction);
     trayMenu.addAction(&takeFullscreenScreenshotAction);
     trayMenu.addSeparator();
@@ -129,8 +130,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
         trayMenu.insertSeparator(&loginAction);
     });
 
-    QObject::connect(&exitAction, &QAction::triggered, &app, &QApplication::quit);
-
+    QObject::connect(&exitAction, &QAction::triggered, [&]() {
+        qApp->exit();
+    });
 
     MainWindow mainWindow(&configManager);
     mainWindow.hide();
@@ -172,23 +174,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
         mainWindow.handleScreenshotClosed();
     });
 
-    /*MSG msg;
-    while (true)
-    {
-        // Wait for messages
-        if (GetMessage(&msg, nullptr, 0, 0))
-        {
-            // Check if the message is for a hotkey
-            if (msg.message == WM_HOTKEY)
-            {
-                std::cout << "Global hotkey pressed!" << std::endl;
-            }
+    HotkeyEventFilter hotkeyEventFilter(&mainWindow);
+    app.installNativeEventFilter(&hotkeyEventFilter);
 
-            // Translate and dispatch the message
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }*/
+    QObject::connect(&hotkeyEventFilter, &HotkeyEventFilter::hotkeyPressed, [&](quint32 id) {
+        mainWindow.handleHotkeyActivated(id);
+        std::cout << "Global hotkey pressed!" << std::endl;
+    });
 
     return app.exec();
 }

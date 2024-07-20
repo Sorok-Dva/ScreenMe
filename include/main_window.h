@@ -1,13 +1,14 @@
 #pragma once
 
 #include <QWidget>
+#include <QMainWindow>
 #include <QJsonObject>
 #include <QPointer>
 #include "screenshotdisplay.h"
 #include "config_manager.h"
 #include "UGlobalHotkeys.h"
 
-class MainWindow : public QWidget {
+class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
     explicit MainWindow(ConfigManager* configManager, QWidget* parent = nullptr);
