@@ -11,4 +11,4 @@ void saveLoginInfo(const QString& id, const QString& email, const QString& nickn
 QString loadLoginInfo();
 void clearLoginInfo();
 
-const QString SCREEN_ME_HOST = "http://localhost:3001";
+const QString SCREEN_ME_HOST = "https://screen-me.cloud";

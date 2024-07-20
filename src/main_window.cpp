@@ -41,9 +41,9 @@ void MainWindow::takeScreenshot() {
         return;
     }
     QPixmap originalPixmap = screen->grabWindow(0);
-    ScreenshotDisplay* display = new ScreenshotDisplay(originalPixmap, nullptr, configManager);
-    connect(display, &ScreenshotDisplay::screenshotClosed, this, &MainWindow::handleScreenshotClosed);
-    display->show();
+    screenshotDisplay = new ScreenshotDisplay(originalPixmap, nullptr, configManager);
+    connect(screenshotDisplay, &ScreenshotDisplay::screenshotClosed, this, &MainWindow::handleScreenshotClosed);
+    screenshotDisplay->show();
     isScreenshotDisplayed = true;
 }
 
@@ -71,5 +71,10 @@ void MainWindow::handleHotkeyActivated(size_t id) {
 }
 
 void MainWindow::handleScreenshotClosed() {
+    qDebug() << "handleScreenshotClosed";
     isScreenshotDisplayed = false;
+    if (screenshotDisplay) {
+        screenshotDisplay->deleteLater();
+        screenshotDisplay = nullptr;
+    }
 }

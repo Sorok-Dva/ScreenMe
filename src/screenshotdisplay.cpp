@@ -359,91 +359,120 @@ void ScreenshotDisplay::onSaveRequested() {
 }
 
 void ScreenshotDisplay::onPublishRequested() {
+    if (textEdit) {
+        finalizeTextEdit();
+    }
+
+    selectionRect = QRect();
+
+    this->hide();
+    editor->hide();
+
     QPixmap resultPixmap = originalPixmap;
     QPainter painter(&resultPixmap);
     painter.drawPixmap(0, 0, drawingPixmap);
     QString tempFilePath = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/screenshot.png";
     resultPixmap.save(tempFilePath);
 
-    if (selectionRect.isValid()) {
-        QString jsonStr = loadLoginInfo();
-        QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
-        QJsonObject loginInfo = jsonDoc.object();
+    QString jsonStr = loadLoginInfo();
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
+    QJsonObject loginInfo = jsonDoc.object();
 
-        QNetworkAccessManager* manager = new QNetworkAccessManager(this);
-        QUrl url(SCREEN_ME_HOST + "/api/screenshot");
-        QNetworkRequest request(url);
+    QNetworkAccessManager* manager = new QNetworkAccessManager(this);
+    QUrl url(SCREEN_ME_HOST + "/api/screenshot");
+    QNetworkRequest request(url);
 
-        request.setRawHeader("Authorization", "Bearer " + loginInfo["token"].toString().toUtf8());
+    request.setRawHeader("Authorization", "Bearer " + loginInfo["token"].toString().toUtf8());
 
-        QHttpMultiPart* multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+    QHttpMultiPart* multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
 
-        QHttpPart imagePart;
-        imagePart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("image/png"));
-        imagePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"screenshot\"; filename=\"screenshot.png\""));
+    QHttpPart imagePart;
+    imagePart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("image/png"));
+    imagePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"screenshot\"; filename=\"screenshot.png\""));
 
-        QFile* file = new QFile(tempFilePath);
-        if (!file->open(QIODevice::ReadOnly)) {
-            QMessageBox::critical(this, "Error", "Failed to open the image file for upload.");
-            return;
+    QFile* file = new QFile(tempFilePath);
+    if (!file->open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(this, "Error", "Failed to open the image file for upload.");
+        return;
+    }
+    imagePart.setBodyDevice(file);
+    file->setParent(multiPart);
+
+    multiPart->append(imagePart);
+
+    QProgressDialog* progressDialog = new QProgressDialog("Publishing screenshot", "Cancel", 0, 100, this);
+    progressDialog->setWindowModality(Qt::WindowModal);
+    progressDialog->setAutoClose(false);
+    progressDialog->setAutoReset(false);
+    progressDialog->show();
+
+    // Position the progress dialog at the bottom right of the screen
+    QRect screenGeometry = QApplication::primaryScreen()->geometry();
+    QSize progressDialogSize = progressDialog->sizeHint();
+    progressDialog->move(screenGeometry.bottomRight() - QPoint(progressDialogSize.width() + 10, progressDialogSize.height() + 100));
+
+    QNetworkReply* reply = manager->post(request, multiPart);
+    multiPart->setParent(reply);
+
+    connect(progressDialog, &QProgressDialog::canceled, reply, &QNetworkReply::abort);
+
+    connect(reply, &QNetworkReply::uploadProgress, this, [progressDialog](qint64 bytesSent, qint64 bytesTotal) {
+        if (bytesTotal > 0) {
+            progressDialog->setMaximum(bytesTotal);
+            progressDialog->setValue(bytesSent);
         }
-        imagePart.setBodyDevice(file);
-        file->setParent(multiPart);
+    });
 
-        multiPart->append(imagePart);
+    connect(reply, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::errorOccurred), this, [reply]() {
+        qDebug() << "Network Error:" << reply->errorString();
+    });
 
-        QProgressDialog* progressDialog = new QProgressDialog("Publishing screenshot", "Cancel", 0, 100, this);
-        progressDialog->setWindowModality(Qt::WindowModal);
-        progressDialog->setAutoClose(false);
-        progressDialog->setAutoReset(false);
-        progressDialog->show();
+    connect(reply, &QNetworkReply::finished, this, [reply, file, tempFilePath, this, progressDialog, screenGeometry]() {
+        progressDialog->close();
 
-        QNetworkReply* reply = manager->post(request, multiPart);
-        multiPart->setParent(reply);
+        if (reply->error() == QNetworkReply::NoError) {
+            QByteArray response = reply->readAll();
+            QJsonDocument jsonResponse = QJsonDocument::fromJson(response);
+            QJsonObject jsonObject = jsonResponse.object();
+            QString url = jsonObject["url"].toString();
+            QString link = SCREEN_ME_HOST + "/" + url;
 
-        connect(progressDialog, &QProgressDialog::canceled, reply, &QNetworkReply::abort);
+            QMessageBox msgBox(this);
+            msgBox.setWindowTitle("Screenshot Uploaded");
+            msgBox.setText("Screenshot uploaded successfully! Link: " + link);
+            QPushButton* copyButton = msgBox.addButton(tr("Copy"), QMessageBox::ActionRole);
+            msgBox.addButton(QMessageBox::Ok);
 
-        connect(reply, &QNetworkReply::uploadProgress, this, [progressDialog](qint64 bytesSent, qint64 bytesTotal) {
-            if (bytesTotal > 0) {
-                progressDialog->setMaximum(bytesTotal);
-                progressDialog->setValue(bytesSent);
-            }
-        });
+            connect(copyButton, &QPushButton::clicked, [link]() {
+                QClipboard* clipboard = QGuiApplication::clipboard();
+                clipboard->setText(link);
+            });
 
-        connect(reply, &QNetworkReply::finished, this, [reply, file, tempFilePath, this, progressDialog]() {
-            progressDialog->close();
-
-            if (reply->error() == QNetworkReply::NoError) {
-                QByteArray response = reply->readAll();
-                QJsonDocument jsonResponse = QJsonDocument::fromJson(response);
-                QJsonObject jsonObject = jsonResponse.object();
-                QString url = jsonObject["url"].toString();
-                QString link = SCREEN_ME_HOST + "/" + url;
-
-                QMessageBox msgBox(this);
-                msgBox.setWindowTitle("Screenshot Uploaded");
-                msgBox.setText("Screenshot uploaded successfully! Link: " + link);
-                QPushButton* copyButton = msgBox.addButton(tr("Copy"), QMessageBox::ActionRole);
-                msgBox.addButton(QMessageBox::Ok);
-
-                connect(copyButton, &QPushButton::clicked, [link]() {
-                    QClipboard* clipboard = QGuiApplication::clipboard();
-                    clipboard->setText(link);
-                });
-
-                msgBox.exec();
+            // Position the message box at the bottom right of the screen
+            msgBox.show();
+            QSize msgBoxSize = msgBox.sizeHint();
+            msgBox.move(screenGeometry.bottomRight() - QPoint(msgBoxSize.width() + 10, msgBoxSize.height() + 100));
+            msgBox.exec();
+        } else {
+            QString errorString = reply->errorString();
+            qDebug() << "Upload Failed:" << errorString;
+            QString serverReply = errorString.section("server replied: ", 1, 1);
+            if (serverReply.contains("Forbidden")) {
+                QMessageBox::critical(this, "Upload Failed", "Failed to upload screenshot: " + serverReply + "\nPlease try to log in again.");
             }
             else {
-                QMessageBox::critical(this, "Upload Failed", "Failed to upload screenshot: " + reply->errorString());
+                QMessageBox::critical(this, "Upload Failed", "Failed to upload screenshot: " + serverReply);
             }
-            reply->deleteLater();
-            file->deleteLater();
-            QFile::remove(tempFilePath);
-            delete progressDialog;
-        });
-    }
-    close();
+        }
+        reply->deleteLater();
+        file->deleteLater();
+        QFile::remove(tempFilePath);
+        delete progressDialog;
+
+        emit screenshotClosed();
+    });
 }
+
 
 
 void ScreenshotDisplay::onCloseRequested() {

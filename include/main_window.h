@@ -2,6 +2,8 @@
 
 #include <QWidget>
 #include <QJsonObject>
+#include <QPointer>
+#include "screenshotdisplay.h"
 #include "config_manager.h"
 #include "UGlobalHotkeys.h"
 
@@ -20,6 +22,7 @@ signals:
     void screenshotClosed();
 
 private:
+    QPointer<ScreenshotDisplay> screenshotDisplay;
     ConfigManager* configManager;
     UGlobalHotkeys* hotkeyManager;
     bool isScreenshotDisplayed;
