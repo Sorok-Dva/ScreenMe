@@ -1,20 +1,28 @@
+![Logo](resources/icon.png)
+
 # ScreenMe - Screenshot Tool
 
 ScreenMe is a simple screenshot tool built with C++ and Qt. It allows users to take screenshots and save them with auto-incremented filenames. The tool includes a system tray icon for easy access to the screenshot functionality and configurable hotkeys.
+ScreenMe is designed for capturing, managing, and sharing screenshots efficiently. The application provides a range of functionalities to enhance the screenshot experience, from hotkey configurations to a built-in editor for annotating screenshots.
+
+A website is available to register user captures online: [ScreenMe Website](https://screen-me.cloud).
 
 ## Features
 
-- Take a screenshot of the active screen.
-- Save screenshots.
-- Configurable hotkeys for taking screenshots.
-- System tray icon for easy access.
+- Capture full screen or selected area screenshots
+- Annotate screenshots with text, shapes, and drawing tools
+- Save screenshots in multiple formats (PNG, JPEG)
+- Hotkey support for quick access to screenshot functionalities
+- System tray integration for easy access
+- Online synchronization of screenshots (requires login)
+- Configurable options for image quality and file saving
 
 ## Installation
 
 ### Prerequisites
 
-- Qt framework
-- C++ compiler
+- Qt 5.12 or later
+- CMake 3.10 or later
 
 ### Building the Project
 
@@ -30,13 +38,36 @@ ScreenMe is a simple screenshot tool built with C++ and Qt. It allows users to t
 
 ## Usage
 
-1. **System Tray Icon**:
-    - Right-click the tray icon to access the options.
-    - Left-click the tray icon to take a screenshot.
+### Starting the Application
 
-2. **Hotkeys**:
-    - Configure hotkeys in the options menu.
-    - Use the configured hotkeys to take screenshots.
+Launch the application by running the `ScreenMe` executable. The application will minimize to the system tray, where you can access its functionalities by right-clicking the tray icon.
+
+### Taking Screenshots
+
+- **Take Screenshot**: Use the configured hotkey to capture a screenshot of the selected area.
+- **Take Fullscreen Screenshot**: Use the configured hotkey to capture a fullscreen screenshot.
+
+### Editing Screenshots
+
+After capturing a screenshot, the built-in editor allows you to:
+- Draw shapes (rectangle, ellipse, line, arrow)
+- Add text
+- Undo and redo actions
+- Save or copy the edited screenshot
+
+### Options
+
+Access the options window through the system tray menu to configure:
+- Hotkeys for taking screenshots
+- Default save folder
+- Image quality and file format
+
+### Online Synchronization
+
+To upload and synchronize your screenshots online:
+1. Log in through the system tray menu.
+2. After logging in, your screenshots will be uploaded automatically.
+3. Visit [ScreenMe Website](https://screen-me.cloud) to view and manage your screenshots.
 
 ## Configuration
 
@@ -59,6 +90,16 @@ Contributions are welcome ! If you would like to contribute to this project, ple
 4. Push to the branch.
 5. Create a pull request.
 
+## Acknowledgments
+
+- Developed by [Сорок два](https://github.com/Sorok-Dva). All rights reserved.
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+
+## Contact
+
+For any inquiries or feedback, please visit our [GitHub Repository](https://github.com/Sorok-Dva/ScreenMe) or contact the developers directly.
+
