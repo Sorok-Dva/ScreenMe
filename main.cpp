@@ -25,6 +25,7 @@ const QString VERSION = "1.1.0";
 static void showAboutDialog() {
     QMessageBox aboutBox;
     aboutBox.setWindowTitle("About ScreenMe");
+    aboutBox.setWindowIcon(QIcon("resources/icon.png"));
     aboutBox.setTextFormat(Qt::RichText);
     aboutBox.setAttribute(Qt::WA_QuitOnClose, false);
     aboutBox.setText(
