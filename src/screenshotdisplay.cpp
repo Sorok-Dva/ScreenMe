@@ -17,6 +17,7 @@
 #include <QShortcut>
 #include <QToolTip>
 #include <QCursor>
+#include <QCheckBox>
 #include <QWheelEvent>
 
 ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent, ConfigManager* configManager)
@@ -429,7 +430,7 @@ void ScreenshotDisplay::onPublishRequested() {
             qDebug() << "Network Error:" << reply->errorString();
         });
 
-        connect(reply, &QNetworkReply::finished, this, [reply, file, tempFilePath, this, progressDialog, screenGeometry]() {
+        connect(reply, &QNetworkReply::finished, this, [reply, file, tempFilePath, this, progressDialog, screenGeometry, loginInfo]() {
             progressDialog->close();
 
             if (reply->error() == QNetworkReply::NoError) {
@@ -437,13 +438,37 @@ void ScreenshotDisplay::onPublishRequested() {
                 QJsonDocument jsonResponse = QJsonDocument::fromJson(response);
                 QJsonObject jsonObject = jsonResponse.object();
                 QString url = jsonObject["url"].toString();
+                QString id = QString::number(jsonObject["id"].toInt());
                 QString link = SCREEN_ME_HOST + "/" + url;
 
                 QMessageBox msgBox(this);
                 msgBox.setWindowTitle("Screenshot Uploaded");
-                msgBox.setText("Screenshot uploaded successfully! Link: " + link);
+                msgBox.setText("Screenshot uploaded successfully ! Link: " + link);
                 QPushButton* copyButton = msgBox.addButton(tr("Copy"), QMessageBox::ActionRole);
                 msgBox.addButton(QMessageBox::Ok);
+
+                QCheckBox* privateCheckBox = nullptr;
+                if (!loginInfo["token"].toString().isEmpty()) {
+                    privateCheckBox = new QCheckBox("Private", &msgBox);
+                    msgBox.setCheckBox(privateCheckBox);
+
+                    connect(privateCheckBox, &QCheckBox::toggled, this, [id, loginInfo](bool checked) {
+                        QNetworkAccessManager* manager = new QNetworkAccessManager();
+                        QUrl url(SCREEN_ME_HOST + "/api/screenshot/" + id);
+                        QNetworkRequest request(url);
+
+                        request.setRawHeader("Authorization", "Bearer " + loginInfo["token"].toString().toUtf8());
+                        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+                        QJsonObject json;
+                        json["privacy"] = checked ? "private" : "public";
+                        QJsonDocument doc(json);
+                        QByteArray data = doc.toJson();
+
+                        QNetworkReply* reply = manager->sendCustomRequest(request, "PATCH", data);
+                        connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
+                    });
+                }
 
                 connect(copyButton, &QPushButton::clicked, [link]() {
                     QClipboard* clipboard = QGuiApplication::clipboard();
@@ -475,8 +500,8 @@ void ScreenshotDisplay::onPublishRequested() {
             emit screenshotClosed();
         });
     }
-    
 }
+
 
 void ScreenshotDisplay::onCloseRequested() {
     close();
