@@ -26,6 +26,7 @@ static void showAboutDialog() {
     QMessageBox aboutBox;
     aboutBox.setWindowTitle("About ScreenMe");
     aboutBox.setTextFormat(Qt::RichText);
+    aboutBox.setAttribute(Qt::WA_QuitOnClose, false);
     aboutBox.setText(
         "<h1>ScreenMe<h1>"
         "Version <b>" + VERSION + "</b><br><br>"
