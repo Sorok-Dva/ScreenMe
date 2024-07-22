@@ -7,6 +7,11 @@ ScreenMe is designed for capturing, managing, and sharing screenshots efficientl
 
 A website is available to register user captures online: [ScreenMe Website](https://screen-me.cloud).
 
+### Why ScreenMe?
+ScreenMe was created because of security concerns with Lightshot. There have been security vulnerabilities in Lightshot that allow anyone to view screenshots from other users. ScreenMe addresses this issue with robust privacy settings that ensure only you control who sees your screenshots.
+
+Additionally, Lightshot has issues with Facebook login, resulting in users losing access to their galleries. ScreenMe offers reliable tools to migrate your screenshots from Lightshot to ScreenMe.
+
 ## Features
 
 - Capture full screen or selected area screenshots
