@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <Name>ScreenMe</Name>
+    <Version>1.1.0</Version>
+    <Title>ScreenMe</Title>
+    <Publisher>SorokDva</Publisher>
+    <StartMenuDir>ScreenMe</StartMenuDir>
+    <TargetDir>@ApplicationsDir@/ScreenMe @Version@</TargetDir>
+    <ProductUrl>https://screen-me.cloud/</ProductUrl>
+</Installer>
