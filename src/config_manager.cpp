@@ -1,39 +1,43 @@
 #include "include/config_manager.h"
+#include "include/utils.h"
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QDir>
 
 ConfigManager::ConfigManager(const QString& configPath) : configPath(configPath) {
-    QFile file(configPath);
-    if (!file.exists()) {
+    QString filePath = getConfigFilePath("config.json");
+    QFile configFile(filePath);
+    if (!configFile.exists()) {
         QJsonObject defaultConfig;
-        defaultConfig["screenshot_hotkey"] = "Ctrl+Shift+S";
-        defaultConfig["fullscreen_hotkey"] = "Ctrl+Shift+F";
+        defaultConfig["screenshot_hotkey"] = "Print";
+        defaultConfig["fullscreen_hotkey"] = "Ctrl+Shift+Print";
         defaultConfig["file_extension"] = "png";
         defaultConfig["image_quality"] = 90;
-        defaultConfig["default_save_folder"] = QDir::homePath();
-        defaultConfig["start_with_system"] = false;
+        defaultConfig["default_save_folder"] = QDir::homePath() + "/Pictures/ScreenMe";
+        defaultConfig["start_with_system"] = true;
         saveConfig(defaultConfig);
     }
 }
 
 QJsonObject ConfigManager::loadConfig() {
-    QFile file(configPath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    QString filePath = getConfigFilePath("config.json");
+    QFile configFile(filePath);
+    if (!configFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         return QJsonObject();
     }
-    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-    file.close();
+    QJsonDocument doc = QJsonDocument::fromJson(configFile.readAll());
+    configFile.close();
     return doc.object();
 }
 
 void ConfigManager::saveConfig(const QJsonObject& config) {
-    QFile file(configPath);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    QString filePath = getConfigFilePath("config.json");
+    QFile configFile(filePath);
+    if (!configFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
         return;
     }
     QJsonDocument doc(config);
-    file.write(doc.toJson());
-    file.close();
+    configFile.write(doc.toJson());
+    configFile.close();
 }
