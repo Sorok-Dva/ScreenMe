@@ -150,7 +150,6 @@
     <QtMoc Include="include\options_window.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\config.json" />
     <None Include="ScreenMe.pro" />
   </ItemGroup>
   <ItemGroup>

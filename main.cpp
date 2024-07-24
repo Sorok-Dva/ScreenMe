@@ -9,6 +9,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QMessageBox>
+#include <QSharedMemory>
 #include <include/options_window.h>
 #include <include/config_manager.h>
 #include "include/login_loader.h"
@@ -20,7 +21,8 @@
 
 using namespace std;
 
-const QString VERSION = "1.1.0";
+#define SHARED_MEM_KEY "ScreenMeSharedMemory"
+const QString VERSION = "1.1.1";
 
 static void showAboutDialog() {
     QMessageBox aboutBox;
@@ -50,6 +52,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
         FreeConsole();
     #endif
 
+    QSharedMemory sharedMemory(SHARED_MEM_KEY);
+    if (!sharedMemory.create(1)) {
+        QMessageBox::warning(nullptr, "ScreenMe is already running",
+        "An instance of this application is already running. Please quit existing ScreenMe process first.");
+        return 1;
+    }
+
     QString jsonStr = loadLoginInfo();
     QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
     QJsonObject loginInfo = jsonDoc.object();
@@ -57,6 +66,15 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
     ConfigManager configManager("resources/config.json");
     QSystemTrayIcon trayIcon(QIcon("resources/icon.png"));
     QMenu trayMenu;
+
+    QJsonObject config = configManager.loadConfig();
+    QVariant startWithSystemVar = config["start_with_system"].toBool();
+    if (startWithSystemVar.isValid() && startWithSystemVar.toBool()) {
+        setAutoStart(true);
+    }
+    else {
+        setAutoStart(false);
+    }
 
     QAction loginAction("Login to ScreenMe", &trayMenu);
     QAction takeScreenshotAction("Take Screenshot", &trayMenu);

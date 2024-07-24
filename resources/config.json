@@ -1,8 +1,0 @@
-{
-    "default_save_folder": "~/Pictures/ScreenMe",
-    "file_extension": "png",
-    "fullscreen_hotkey": "Ctrl+Shift+Print",
-    "image_quality": 100,
-    "screenshot_hotkey": "Print",
-    "start_with_system": true
-}

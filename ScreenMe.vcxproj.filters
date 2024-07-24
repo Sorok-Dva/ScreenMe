@@ -105,9 +105,6 @@
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\config.json">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="ScreenMe.pro">
       <Filter>Source Files</Filter>
     </None>
