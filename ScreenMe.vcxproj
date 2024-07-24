@@ -133,6 +133,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\config_manager.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="resource1.h" />
     <QtMoc Include="include\screenshotdisplay.h" />
     <QtMoc Include="include\editor.h" />
     <QtMoc Include="include\customTextEdit.h" />
@@ -153,17 +155,10 @@
     <None Include="ScreenMe.pro" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="resources\icon.png" />
-    <Image Include="resources\icons\arrow.png" />
-    <Image Include="resources\icons\close.png" />
-    <Image Include="resources\icons\copy.png" />
-    <Image Include="resources\icons\ellipse.png" />
-    <Image Include="resources\icons\line.png" />
-    <Image Include="resources\icons\pen.png" />
-    <Image Include="resources\icons\rectangle.png" />
-    <Image Include="resources\icons\save.png" />
-    <Image Include="resources\icons\text.png" />
-    <Image Include="resources\icons\upload.png" />
+    <QtRcc Include="icons.qrc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ScreenMe.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

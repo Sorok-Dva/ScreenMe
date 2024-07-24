@@ -19,18 +19,18 @@ Editor::Editor(QWidget* parent)
     });
     layout->addWidget(colorButton);
 
-    createToolButton("Pen", Pen, QIcon("resources/icons/pen.png"));
-    createToolButton("Text", Text, QIcon("resources/icons/text.png"));
-    createToolButton("Rectangle", Rectangle, QIcon("resources/icons/rectangle.png"));
-    createToolButton("Oval", Ellipse, QIcon("resources/icons/ellipse.png"));
-    createToolButton("Line", Line, QIcon("resources/icons/line.png"));
-    createToolButton("Arrow", Arrow, QIcon("resources/icons/arrow.png"));
+    createToolButton("Pen", Pen, QIcon(":/resources/icons/pen.png"));
+    createToolButton("Text", Text, QIcon(":/resources/icons/text.png"));
+    createToolButton("Rectangle", Rectangle, QIcon(":/resources/icons/rectangle.png"));
+    createToolButton("Oval", Ellipse, QIcon(":/resources/icons/ellipse.png"));
+    createToolButton("Line", Line, QIcon(":/resources/icons/line.png"));
+    createToolButton("Arrow", Arrow, QIcon(":/resources/icons/arrow.png"));
 
     actionLayout = new QHBoxLayout();
-    createActionButton("Save", QIcon("resources/icons/save.png"), "saveRequested");
-    createActionButton("Copy to clipboard (CTRL + C)", QIcon("resources/icons/copy.png"), "copyRequested");
-    createActionButton("Upload to ScreenMe", QIcon("resources/icons/upload.png"), "publishRequested");
-    createActionButton("Close editor", QIcon("resources/icons/close.png"), "closeRequested");
+    createActionButton("Save", QIcon(":/resources/icons/save.png"), "saveRequested");
+    createActionButton("Copy to clipboard (CTRL + C)", QIcon(":/resources/icons/copy.png"), "copyRequested");
+    createActionButton("Upload to ScreenMe", QIcon(":/resources/icons/upload.png"), "publishRequested");
+    createActionButton("Close editor", QIcon(":/resources/icons/close.png"), "closeRequested");
     layout->addLayout(actionLayout);
 }
 

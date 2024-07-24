@@ -19,6 +19,7 @@
 #include "include/hotkeyEventFilter.h"
 #include "include/globalKeyboardHook.h"
 
+
 using namespace std;
 
 #define SHARED_MEM_KEY "ScreenMeSharedMemory"
@@ -27,7 +28,7 @@ const QString VERSION = "1.1.1";
 static void showAboutDialog() {
     QMessageBox aboutBox;
     aboutBox.setWindowTitle("About ScreenMe");
-    aboutBox.setWindowIcon(QIcon("resources/icon.png"));
+    aboutBox.setWindowIcon(QIcon(":/resources/icon.png"));
     aboutBox.setTextFormat(Qt::RichText);
     aboutBox.setAttribute(Qt::WA_QuitOnClose, false);
     aboutBox.setText(
@@ -39,7 +40,7 @@ static void showAboutDialog() {
         "Terms of use of ScreenMe : <a href=\"" + SCREEN_ME_HOST + "/terms-of-use\">" + SCREEN_ME_HOST + "/terms-of-use</a><br><br>"
         "© 2024 Developed by <a href=\"https://github.com/Sorok-Dva\">Сорок два</a>. <b>All rights reserved.</b>"
     );
-    aboutBox.setIconPixmap(QPixmap("resources/icon.png"));
+    aboutBox.setIconPixmap(QPixmap(":/resources/icon.png"));
     aboutBox.exec();
 }
 
@@ -52,6 +53,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
         FreeConsole();
     #endif
 
+    app.setWindowIcon(QIcon(":/resources/app.ico"));
+
     QSharedMemory sharedMemory(SHARED_MEM_KEY);
     if (!sharedMemory.create(1)) {
         QMessageBox::warning(nullptr, "ScreenMe is already running",
@@ -63,8 +66,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
     QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
     QJsonObject loginInfo = jsonDoc.object();
 
-    ConfigManager configManager("resources/config.json");
-    QSystemTrayIcon trayIcon(QIcon("resources/icon.png"));
+    ConfigManager configManager("config.json");
+    QSystemTrayIcon trayIcon(QIcon(":/resources/icon.png"));
     QMenu trayMenu;
 
     QJsonObject config = configManager.loadConfig();

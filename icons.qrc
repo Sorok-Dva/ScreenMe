@@ -1,0 +1,16 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/icons/arrow.png</file>
+        <file>resources/icons/close.png</file>
+        <file>resources/icons/copy.png</file>
+        <file>resources/icons/ellipse.png</file>
+        <file>resources/icons/line.png</file>
+        <file>resources/icons/pen.png</file>
+        <file>resources/icons/rectangle.png</file>
+        <file>resources/icons/save.png</file>
+        <file>resources/icons/text.png</file>
+        <file>resources/icons/upload.png</file>
+        <file>resources/icon.png</file>
+        <file>resources/app.ico</file>
+    </qresource>
+</RCC>
