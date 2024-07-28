@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef CUSTOMTEXTEDIT_H
 #define CUSTOMTEXTEDIT_H
 

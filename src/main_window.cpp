@@ -14,22 +14,22 @@ MainWindow::MainWindow(ConfigManager* configManager, QWidget* parent)
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setGeometry(QGuiApplication::primaryScreen()->geometry());
 
-    // Initialize UGlobalHotkeys
-    hotkeyManager = new UGlobalHotkeys(this);
+    // // Initialize UGlobalHotkeys
+    // hotkeyManager = new UGlobalHotkeys(this);
 
-    QJsonObject config = configManager->loadConfig();
-    QString screenshotHotkey = config["screenshot_hotkey"].toString();
-    QString fullscreenHotkey = config["fullscreen_hotkey"].toString();
+    // QJsonObject config = configManager->loadConfig();
+    // QString screenshotHotkey = config["screenshot_hotkey"].toString();
+    // QString fullscreenHotkey = config["fullscreen_hotkey"].toString();
 
-    if (!screenshotHotkey.isEmpty()) {
-        hotkeyManager->registerHotkey(screenshotHotkey, 1);
-    }
+    // if (!screenshotHotkey.isEmpty()) {
+    //     hotkeyManager->registerHotkey(screenshotHotkey, 1);
+    // }
 
-    if (!fullscreenHotkey.isEmpty()) {
-        hotkeyManager->registerHotkey(fullscreenHotkey, 2);
-    }
+    // if (!fullscreenHotkey.isEmpty()) {
+    //     hotkeyManager->registerHotkey(fullscreenHotkey, 2);
+    // }
 
-    connect(hotkeyManager, &UGlobalHotkeys::activated, this, &MainWindow::handleHotkeyActivated);
+    // connect(hotkeyManager, &UGlobalHotkeys::activated, this, &MainWindow::handleHotkeyActivated);
 }
 
 void MainWindow::reloadHotkeys() {

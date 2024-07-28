@@ -3,7 +3,6 @@
 #include <exception>
 #include <QString>
 #include <QByteArray>
-#include "uglobal.h"
 
 class UException : public std::exception
 {

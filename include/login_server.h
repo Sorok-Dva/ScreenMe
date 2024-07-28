@@ -1,9 +1,11 @@
+#pragma once
+
 #ifndef LOGIN_SERVER_H
 #define LOGIN_SERVER_H
 
 #include <QObject>
-#include <QWebSocketServer>
-#include <QWebSocket>
+#include <QtWebSockets/QWebSocketServer>
+#include <QtWebSockets/QWebSocket>
 #include <QJsonDocument>
 #include <QJsonObject>
 

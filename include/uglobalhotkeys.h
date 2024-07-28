@@ -11,8 +11,6 @@
 #endif
 
 #include "ukeysequence.h"
-#include "uexception.h"
-#include "uglobal.h"
 
 #if defined(Q_OS_LINUX)
 struct UHotkeyData {

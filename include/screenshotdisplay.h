@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef SCREENSHOTDISPLAY_H
 #define SCREENSHOTDISPLAY_H
 

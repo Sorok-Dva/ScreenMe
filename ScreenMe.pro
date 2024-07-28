@@ -1,15 +1,21 @@
-QT = core gui widgets
+QT += core gui widgets network websockets
 
-CONFIG += windows
+greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
+
+TARGET = ScreenMe
+TEMPLATE = app
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 HEADERS += \
-    include/customTextInput.h \
+    include/customTextEdit.h \
     include/config_manager.h \
     include/editor.h \
+    include/globalKeyboardHook.h \
+    include/hotkeyEventFilter.h \
+    include/hotkeymap.h \
     include/options_window.h \
     include/main_window.h \
     include/login_loader.h \
@@ -18,13 +24,16 @@ HEADERS += \
     include/uglobal.h \
     include/uglobalhotkeys.h \
     include/ukeysequence.h \
-    include/screenshotdisplay.h
+    include/screenshotdisplay.h \
+    include/utils.h
 
 SOURCES += \
         main.cpp \
         src/customTextInput.cpp \
         src/config_manager.cpp \
         src/editor.cpp \
+        src/globalKeyboardHook.cpp \
+        src/hotkeyEventFilter.cpp \
         src/options_window.cpp \
         src/main_window.cpp \
         src/screenshotdisplay.cpp \
@@ -32,24 +41,30 @@ SOURCES += \
         src/login_server.cpp \
         src/uexception.cpp \
         src/uglobalhotkeys.cpp \
-        src/ukeysequence.cpp 
+        src/ukeysequence.cpp  \
+        src/utils.cpp
 
-TRANSLATIONS += \
-    ScreenMe_fr_FR.ts
-CONFIG += lrelease
-CONFIG += embed_translations
+RESOURCES += icons.qrc
 
+macx: LIBS += -framework ApplicationServices -framework Carbon
 
-# Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+# Include path for headers
+INCLUDEPATH += .
 
-DISTFILES += \
-    .gitattributes \
-    .gitignore \
-    LICENSE.txt \
-    README.md
+# Include path for Qt modules
+INCLUDEPATH += $$[QT_INSTALL_HEADERS]
 
+# Include path for macOS specific frameworks
+macx: INCLUDEPATH += /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Headers
 
+# Define macros if necessary
+DEFINES += QT_DEPRECATED_WARNINGS
 
+# Enable C++11
+CONFIG += c++11
+
+# Additional settings for macOS
+macx {
+    QMAKE_CXXFLAGS += -stdlib=libc++
+    QMAKE_LFLAGS += -stdlib=libc++
+}

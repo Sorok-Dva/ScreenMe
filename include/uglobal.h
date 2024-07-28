@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef UGLOBAL_H
 #define UGLOBAL_H
 

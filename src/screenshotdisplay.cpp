@@ -2,10 +2,10 @@
 #include "include/config_manager.h"
 #include "include/utils.h"
 #include <QApplication>
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
-#include <QHttpMultiPart>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkRequest>
+#include <QtNetwork/QNetworkReply>
+#include <QtNetwork/QHttpMultiPart>
 #include <QStandardPaths>
 #include <QJsonDocument>
 #include <QFileDialog>

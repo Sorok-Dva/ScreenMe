@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef LOGIN_LOADER_H
 #define LOGIN_LOADER_H
 

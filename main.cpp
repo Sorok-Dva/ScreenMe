@@ -1,4 +1,9 @@
-﻿#include <Windows.h>
+﻿#ifdef _WIN32
+#include <Windows.h>
+#elif defined(Q_OS_MAC)
+#include <ApplicationServices/ApplicationServices.h>
+#endif
+
 #include <iostream>
 #include <QMainWindow>
 #include <QApplication>
@@ -17,8 +22,6 @@
 #include <include/main_window.h>
 #include <include/utils.h>
 #include "include/hotkeyEventFilter.h"
-#include "include/globalKeyboardHook.h"
-
 
 using namespace std;
 
@@ -34,33 +37,32 @@ static void showAboutDialog() {
     aboutBox.setText(
         "<h1>ScreenMe<h1>"
         "Version <b>" + VERSION + "</b><br><br>"
-        "<span style=\"color: green\">Contribute on GitHub ! </span> : <a href=\"https://github.com/Sorok-Dva/ScreenMe\">Github Repository</a><br><br>"
-    );
+                    "<span style=\"color: green\">Contribute on GitHub ! </span> : <a href=\"https://github.com/Sorok-Dva/ScreenMe\">Github Repository</a><br><br>"
+        );
     aboutBox.setInformativeText(
         "Terms of use of ScreenMe : <a href=\"" + SCREEN_ME_HOST + "/terms-of-use\">" + SCREEN_ME_HOST + "/terms-of-use</a><br><br>"
-        "© 2024 Developed by <a href=\"https://github.com/Sorok-Dva\">Сорок два</a>. <b>All rights reserved.</b>"
-    );
+                                                                                                         "© 2024 Developed by <a href=\"https://github.com/Sorok-Dva\">Сорок два</a>. <b>All rights reserved.</b>"
+        );
     aboutBox.setIconPixmap(QPixmap(":/resources/icon.png"));
     aboutBox.exec();
 }
 
-int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
-{
-    int argc = 0;
-    QApplication app(argc, 0);
-    #ifdef _WIN32
-        // Ensure the console window does not appear on Windows
-        FreeConsole();
-    #endif
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+
+#ifdef _WIN32
+    // Ensure the console window does not appear on Windows
+    FreeConsole();
+#endif
 
     app.setWindowIcon(QIcon(":/resources/app.ico"));
 
-    QSharedMemory sharedMemory(SHARED_MEM_KEY);
-    if (!sharedMemory.create(1)) {
-        QMessageBox::warning(nullptr, "ScreenMe is already running",
-        "An instance of this application is already running. Please quit existing ScreenMe process first.");
-        return 1;
-    }
+    // QSharedMemory sharedMemory(SHARED_MEM_KEY);
+    // if (!sharedMemory.create(1)) {
+        // QMessageBox::warning(nullptr, "ScreenMe is already running",
+                             // "An instance of this application is already running. Please quit existing ScreenMe process first.");
+    //     return 1;
+    // }
 
     QString jsonStr = loadLoginInfo();
     QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
@@ -74,8 +76,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
     QVariant startWithSystemVar = config["start_with_system"].toBool();
     if (startWithSystemVar.isValid() && startWithSystemVar.toBool()) {
         setAutoStart(true);
-    }
-    else {
+    } else {
         setAutoStart(false);
     }
 
@@ -94,8 +95,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
     if (loginInfo.isEmpty()) {
         trayMenu.addAction(&loginAction);
         trayMenu.addSeparator();
-    }
-    else {
+    } else {
         QString nickname = loginInfo["nickname"].toString();
         trayMenu.addAction(&myGalleryAction);
         trayMenu.addAction(&logoutAction);
@@ -197,13 +197,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
         mainWindow.handleScreenshotClosed();
     });
 
-    HotkeyEventFilter hotkeyEventFilter(&mainWindow);
-    app.installNativeEventFilter(&hotkeyEventFilter);
+    // HotkeyEventFilter hotkeyEventFilter(&mainWindow);
+    // app.installNativeEventFilter(&hotkeyEventFilter);
 
-    QObject::connect(&hotkeyEventFilter, &HotkeyEventFilter::hotkeyPressed, [&](quint32 id) {
-        mainWindow.handleHotkeyActivated(id);
-        std::cout << "Global hotkey pressed!" << std::endl;
-    });
+    // QObject::connect(&hotkeyEventFilter, &HotkeyEventFilter::hotkeyPressed, [&](quint32 id) {
+    //     mainWindow.handleHotkeyActivated(id);
+    //     std::cout << "Global hotkey pressed!" << std::endl;
+    // });
 
     return app.exec();
 }

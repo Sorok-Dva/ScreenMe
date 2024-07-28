@@ -7,7 +7,6 @@
 #include <QKeyEvent>
 
 #include "uexception.h"
-#include "uglobal.h"
 
 class UKeySequence : public QObject
 {

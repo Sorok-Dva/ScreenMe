@@ -10,8 +10,8 @@ ConfigManager::ConfigManager(const QString& configPath) : configPath(configPath)
     QFile configFile(filePath);
     if (!configFile.exists()) {
         QJsonObject defaultConfig;
-        defaultConfig["screenshot_hotkey"] = "Print";
-        defaultConfig["fullscreen_hotkey"] = "Ctrl+Shift+Print";
+        defaultConfig["screenshot_hotkey"] = "S";
+        defaultConfig["fullscreen_hotkey"] = "Shift+S";
         defaultConfig["file_extension"] = "png";
         defaultConfig["image_quality"] = 90;
         defaultConfig["default_save_folder"] = QDir::homePath() + "/Pictures/ScreenMe";
