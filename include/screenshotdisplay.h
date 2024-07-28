@@ -64,9 +64,11 @@ private:
     void saveStateForUndo();
     void finalizeTextEdit();
     void adjustTextEditSize();
+    void captureScreen();
     HandlePosition handleAtPoint(const QPoint& point);
     void resizeSelection(const QPoint& point);
     Qt::CursorShape cursorForHandle(HandlePosition handle);
+    QPoint adjustForDpi(const QPoint& point);
 
     std::stack<QPixmap> undoStack;
     QPixmap originalPixmap;

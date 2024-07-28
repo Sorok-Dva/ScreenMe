@@ -11,6 +11,7 @@
 #include <QString>
 #include <QStandardPaths>
 #include <QSettings>
+#include <QProcess>
 
 QString getUniqueFilePath(const QString& folder, const QString& baseName, const QString& extension) {
     QDir dir(folder);
@@ -86,14 +87,44 @@ void clearLoginInfo() {
 
 
 void setAutoStart(bool enable) {
+#ifdef Q_OS_WIN
     QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
 
     if (enable) {
         QString applicationName = QApplication::applicationName();
         QString applicationPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
         settings.setValue(applicationName, applicationPath);
-    }
-    else {
+    } else {
         settings.remove(QApplication::applicationName());
     }
+#elif defined(Q_OS_MAC)
+    QString script;
+    QString appName = QApplication::applicationName();
+    QString appPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
+
+    if (enable) {
+        script = QString(
+                     "tell application \"System Events\"\n"
+                     "if not (exists login item \"%1\") then\n"
+                     "make login item at end with properties {name:\"%1\", path:\"%2\", hidden:false}\n"
+                     "end if\n"
+                     "end tell"
+                     ).arg(appName, appPath);
+    } else {
+        script = QString(
+                     "tell application \"System Events\"\n"
+                     "if (exists login item \"%1\") then\n"
+                     "delete login item \"%1\"\n"
+                     "end if\n"
+                     "end tell"
+                     ).arg(appName);
+    }
+
+    QProcess process;
+    process.start("osascript", QStringList() << "-e" << script);
+    process.waitForFinished();
+#else
+    // Unsupported platform
+    Q_UNUSED(enable);
+#endif
 }

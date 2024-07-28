@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
 
     QObject::connect(&optionsAction, &QAction::triggered, [&]() {
         OptionsWindow optionsWindow(&configManager);
-        QObject::connect(&optionsWindow, &OptionsWindow::reloadHotkeys, &mainWindow, &MainWindow::reloadHotkeys);
+        // QObject::connect(&optionsWindow, &OptionsWindow::reloadHotkeys, &mainWindow, &MainWindow::reloadHotkeys);
         optionsWindow.exec();
     });
 
