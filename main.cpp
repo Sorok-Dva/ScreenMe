@@ -1,10 +1,10 @@
-﻿#ifdef _WIN32
+﻿#include <QtCore/qdir.h>
+#ifdef _WIN32
 #include <Windows.h>
 #elif defined(Q_OS_MAC)
 #include <ApplicationServices/ApplicationServices.h>
 #endif
 
-#include <iostream>
 #include <QMainWindow>
 #include <QApplication>
 #include <QSystemTrayIcon>
@@ -15,18 +15,25 @@
 #include <QTextStream>
 #include <QMessageBox>
 #include <QSharedMemory>
+#include <QLockFile>
 #include <include/options_window.h>
 #include <include/config_manager.h>
 #include "include/login_loader.h"
 #include "include/login_server.h"
 #include <include/main_window.h>
 #include <include/utils.h>
-#include "include/hotkeyEventFilter.h"
 
 using namespace std;
 
+#ifdef _WIN32
 #define SHARED_MEM_KEY "ScreenMeSharedMemory"
-const QString VERSION = "1.1.1";
+#elif defined(Q_OS_MAC)
+#define LOCK_FILE_PATH QDir::tempPath() + "/ScreenMe.lock"
+#endif
+
+
+const QString VERSION = "1.2.0";
+
 
 static void showAboutDialog() {
     QMessageBox aboutBox;
@@ -50,19 +57,30 @@ static void showAboutDialog() {
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
-#ifdef _WIN32
-    // Ensure the console window does not appear on Windows
-    FreeConsole();
-#endif
+    #ifdef _WIN32
+        // Ensure the console window does not appear on Windows
+        FreeConsole();
+    #endif
 
     app.setWindowIcon(QIcon(":/resources/app.ico"));
 
-    // QSharedMemory sharedMemory(SHARED_MEM_KEY);
-    // if (!sharedMemory.create(1)) {
-        // QMessageBox::warning(nullptr, "ScreenMe is already running",
-                             // "An instance of this application is already running. Please quit existing ScreenMe process first.");
-    //     return 1;
-    // }
+    #ifdef _WIN32
+        QSharedMemory sharedMemory(SHARED_MEM_KEY);
+        if (!sharedMemory.create(1)) {
+            QMessageBox::warning(nullptr, "ScreenMe is already running",
+            "An instance of this application is already running. Please quit existing ScreenMe process first.");
+            return 1;
+        }
+    #elif defined(Q_OS_MAC)
+        QLockFile lockFile(LOCK_FILE_PATH);
+        if (!lockFile.tryLock()) {
+            QMessageBox::warning(nullptr, "ScreenMe is already running",
+                "An instance of this application is already running. Please quit the existing ScreenMe process first.");
+            return 1;
+        }
+    #endif
+
+
 
     QString jsonStr = loadLoginInfo();
     QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
