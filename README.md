@@ -21,7 +21,7 @@
   <a href="https://github.com/sponsors/Sorok-Dva">
     <img src="https://img.shields.io/badge/sponsor-30363D?style=for-the-badge&logo=GitHub-Sponsors&logoColor=#EA4AAA" alt="Sponsor Me">
   </a>
-  <a href="https://github.com/sponsors/Sorok-Dva">
+  <a href="https://patreon.com/sorokdva">
     <img src="https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white" alt="Support Me on Patreon">
   </a>
 
