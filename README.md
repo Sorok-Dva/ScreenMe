@@ -2,6 +2,7 @@
     <img src="https://raw.githubusercontent.com/Sorok-Dva/ScreenMe/main/resources/icon.png" alt="ScreenMe Logo">
   <h1>ScreenMe</h1>
   <blockquote>Your Ultimate Tool for Effortless Screenshots.</blockquote>
+  <img src="https://hits.dwyl.com/Sorok-Dva/ScreenMe.svg?style=flat-square" alt="Views"><br />
   <a href="https://github.com/Sorok-Dva/ScreenMe/releases/latest">
     <img src="https://img.shields.io/github/license/Sorok-Dva/ScreenMe?style=for-the-badge" alt="Licence MIT">
   </a>
