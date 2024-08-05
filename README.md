@@ -8,6 +8,12 @@
   <a href="https://github.com/Sorok-Dva/ScreenMe/releases">
     <img src="https://img.shields.io/github/downloads/Sorok-Dva/ScreenMe/total.svg?style=for-the-badge" alt="Total downloads">
   </a>
+  <!--<a href="https://shields.io/community#sponsors" alt="Sponsors">
+    <img src="https://img.shields.io/opencollective/sponsors/Sorok-Dva.svg?style=for-the-badge" />
+  </a>-->
+  <a href="https://github.com/Sorok-Dva/ScreenMe/pulse" alt="Activity">
+    <img src="https://img.shields.io/github/commit-activity/m/Sorok-Dva/ScreenMe.svg?style=for-the-badge" />
+  </a>
   <a href="https://github.com/Sorok-Dva/ScreenMe/releases/latest">
     <img src="https://img.shields.io/github/release/Sorok-Dva/ScreenMe.svg?style=for-the-badge" alt="Latest Release">
   </a>
@@ -18,6 +24,8 @@
   <a href="https://github.com/sponsors/Sorok-Dva">
     <img src="https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white" alt="Support Me on Patreon">
   </a>
+
+
 </div>
 
 # ScreenMe - Screenshot Tool
