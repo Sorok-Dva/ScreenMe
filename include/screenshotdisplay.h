@@ -79,6 +79,7 @@ private:
     QPoint cursorPosition;
     QPoint textEditPosition;
     QRect textBoundingRect;
+    QPoint endPoint;
 
     bool selectionStarted;
     bool movingSelection;

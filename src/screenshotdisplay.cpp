@@ -2,7 +2,7 @@
 #include "include/config_manager.h"
 #include "include/utils.h"
 #include <QApplication>
-#include <QNetworkAccessManager>
+#include <QtNetwork/QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QHttpMultiPart>
@@ -29,7 +29,10 @@ ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent, Con
     setWindowTitle("ScreenMe");
     setWindowIcon(QIcon("resources/icon.png"));
     setAttribute(Qt::WA_QuitOnClose, false);
-    setGeometry(QApplication::primaryScreen()->geometry());
+
+    QScreen* screen = QApplication::primaryScreen();
+    QRect screenGeometry = screen->geometry();
+    setGeometry(screenGeometry);
 
     initializeEditor();
     configureShortcuts();
@@ -205,6 +208,10 @@ void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
     movingSelection = false;
     currentHandle = None;
     drawing = false;
+    endPoint = event->pos();
+    qreal ratio = QApplication::primaryScreen()->devicePixelRatio();
+    endPoint.setX(endPoint.x() * ratio);
+    endPoint.setY(endPoint.y() * ratio);
 
     if (shapeDrawing) {
         saveStateForUndo();
@@ -234,6 +241,7 @@ void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
         update();
     }
 
+    update();
     updateTooltip();
 }
 
@@ -513,10 +521,13 @@ void ScreenshotDisplay::copySelectionToClipboard() {
     painter.drawPixmap(0, 0, drawingPixmap);
 
     if (selectionRect.isValid()) {
-        QPixmap selectedPixmap = resultPixmap.copy(selectionRect);
+        // Ajustement des coordonnées pour tenir compte du DPI Scaling
+        qreal ratio = QApplication::primaryScreen()->devicePixelRatio();
+        QRect adjustedRect = QRect(selectionRect.topLeft() / ratio, selectionRect.size() / ratio);
+
+        QPixmap selectedPixmap = resultPixmap.copy(adjustedRect);
         QApplication::clipboard()->setPixmap(selectedPixmap);
-    }
-    else {
+    } else {
         QApplication::clipboard()->setPixmap(resultPixmap);
     }
     close();
