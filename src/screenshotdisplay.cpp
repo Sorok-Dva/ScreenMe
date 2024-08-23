@@ -3,9 +3,9 @@
 #include "include/utils.h"
 #include <QApplication>
 #include <QtNetwork/QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
-#include <QHttpMultiPart>
+#include <QtNetwork/QNetworkRequest>
+#include <QtNetwork/QNetworkReply>
+#include <QtNetwork/QHttpMultiPart>
 #include <QStandardPaths>
 #include <QJsonDocument>
 #include <QFileDialog>
@@ -285,29 +285,34 @@ void ScreenshotDisplay::wheelEvent(QWheelEvent* event) {
 void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event);
     QPainter painter(this);
+    QScreen *screen = this->screen();
+    qreal dpr = screen->devicePixelRatio();
 
-    QPixmap transparentPixmap(originalPixmap.size());
+    QPixmap scaledOriginalPixmap = originalPixmap.scaled(size() * dpr, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    QPixmap scaledDrawingPixmap = drawingPixmap.scaled(size() * dpr, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    QPixmap transparentPixmap(scaledOriginalPixmap.size());
     transparentPixmap.fill(Qt::transparent);
-
+    
     QPainter transparentPainter(&transparentPixmap);
     transparentPainter.setOpacity(0.6);
-    transparentPainter.drawPixmap(0, 0, originalPixmap);
-    transparentPainter.drawPixmap(0, 0, drawingPixmap);
+    transparentPainter.drawPixmap(0, 0, scaledOriginalPixmap);
+    transparentPainter.drawPixmap(0, 0, scaledDrawingPixmap);
 
     painter.drawPixmap(0, 0, transparentPixmap);
 
     if (selectionRect.isValid()) {
-        QPixmap selectedPixmap = originalPixmap.copy(selectionRect);
+        QRect scaledSelectionRect = QRect(selectionRect.topLeft() * dpr, selectionRect.size() * dpr);
+        QPixmap selectedPixmap = scaledOriginalPixmap.copy(scaledSelectionRect);
         painter.drawPixmap(selectionRect.topLeft(), selectedPixmap);
 
-        QPixmap selectedDrawingPixmap = drawingPixmap.copy(selectionRect);
+        QPixmap selectedDrawingPixmap = scaledDrawingPixmap.copy(scaledSelectionRect);
         painter.drawPixmap(selectionRect.topLeft(), selectedDrawingPixmap);
 
         painter.setPen(QPen(Qt::red, 2, Qt::DashLine));
         painter.drawRect(selectionRect);
         drawHandles(painter);
     }
-
     if (shapeDrawing) {
         painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine));
         switch (editor->getCurrentTool()) {
@@ -521,13 +526,10 @@ void ScreenshotDisplay::copySelectionToClipboard() {
     painter.drawPixmap(0, 0, drawingPixmap);
 
     if (selectionRect.isValid()) {
-        // Ajustement des coordonnées pour tenir compte du DPI Scaling
-        qreal ratio = QApplication::primaryScreen()->devicePixelRatio();
-        QRect adjustedRect = QRect(selectionRect.topLeft() / ratio, selectionRect.size() / ratio);
-
-        QPixmap selectedPixmap = resultPixmap.copy(adjustedRect);
+        QPixmap selectedPixmap = resultPixmap.copy(selectionRect);
         QApplication::clipboard()->setPixmap(selectedPixmap);
-    } else {
+    }
+    else {
         QApplication::clipboard()->setPixmap(resultPixmap);
     }
     close();
