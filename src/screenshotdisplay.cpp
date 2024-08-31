@@ -367,7 +367,8 @@ void ScreenshotDisplay::onSaveRequested() {
     QString filePath = QFileDialog::getSaveFileName(this, "Save As", defaultFileName, fileFilter);
 
     if (!filePath.isEmpty()) {
-        originalPixmap.save(filePath);
+        QPixmap selectedPixmap = originalPixmap.copy(selectionRect);
+        selectedPixmap.save(filePath);
         close();
     }
 }
