@@ -215,7 +215,7 @@ void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
 
     if (shapeDrawing) {
         saveStateForUndo();
-        QPixmap tempPixmap = drawingPixmap.copy();
+        QPixmap tempPixmap = originalPixmap.copy();
         QPainter painter(&tempPixmap);
         painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 
@@ -236,7 +236,7 @@ void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
             break;
         }
 
-        drawingPixmap = tempPixmap;
+        originalPixmap = tempPixmap;
         shapeDrawing = false;
         update();
     }
@@ -365,9 +365,12 @@ void ScreenshotDisplay::onSaveRequested() {
     }
 
     QString filePath = QFileDialog::getSaveFileName(this, "Save As", defaultFileName, fileFilter);
+    QScreen* screen = this->screen();
+    qreal dpr = screen->devicePixelRatio();
+    QRect scaledSelectionRect = QRect(selectionRect.topLeft() * dpr, selectionRect.size() * dpr);
 
     if (!filePath.isEmpty()) {
-        QPixmap selectedPixmap = originalPixmap.copy(selectionRect);
+        QPixmap selectedPixmap = originalPixmap.copy(scaledSelectionRect);
         selectedPixmap.save(filePath);
         close();
     }
@@ -383,9 +386,13 @@ void ScreenshotDisplay::onPublishRequested() {
 
     editor->hide();
 
+    QScreen* screen = this->screen();
+    qreal dpr = screen->devicePixelRatio();
+    QRect scaledSelectionRect = QRect(selectionRect.topLeft() * dpr, selectionRect.size() * dpr);
+
     if (selectionRect.isValid()) {
         ScreenshotDisplay::hide();
-        QPixmap selectedPixmap = resultPixmap.copy(selectionRect);
+        QPixmap selectedPixmap = resultPixmap.copy(scaledSelectionRect);
         QApplication::clipboard()->setPixmap(selectedPixmap);
 
         QString tempFilePath = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/screenshot.png";
@@ -526,8 +533,12 @@ void ScreenshotDisplay::copySelectionToClipboard() {
     QPainter painter(&resultPixmap);
     painter.drawPixmap(0, 0, drawingPixmap);
 
+    QScreen* screen = this->screen();
+    qreal dpr = screen->devicePixelRatio();
+    QRect scaledSelectionRect = QRect(selectionRect.topLeft() * dpr, selectionRect.size() * dpr);
+
     if (selectionRect.isValid()) {
-        QPixmap selectedPixmap = resultPixmap.copy(selectionRect);
+        QPixmap selectedPixmap = resultPixmap.copy(scaledSelectionRect);
         QApplication::clipboard()->setPixmap(selectedPixmap);
     }
     else {
