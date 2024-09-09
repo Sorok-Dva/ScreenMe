@@ -163,12 +163,12 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
         updateEditorPosition();
     }
     else if (drawing && editor->getCurrentTool() == Editor::Pen) {
-        QPixmap tempPixmap = drawingPixmap.copy();
+        QPixmap tempPixmap = originalPixmap.copy();
         QPainter painter(&tempPixmap);
         painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
         painter.drawLine(lastPoint, event->pos());
         lastPoint = event->pos();
-        drawingPixmap = tempPixmap;
+        originalPixmap = tempPixmap;
         update();
     }
     else if (shapeDrawing) {
@@ -702,7 +702,7 @@ void ScreenshotDisplay::adjustTextEditSize() {
 void ScreenshotDisplay::finalizeTextEdit() {
     if (textEdit) {
         saveStateForUndo();
-        QPainter painter(&drawingPixmap);
+        QPainter painter(&originalPixmap);
         painter.setFont(textEdit->font());
         painter.setPen(QPen(editor->getCurrentColor()));
 
@@ -710,7 +710,12 @@ void ScreenshotDisplay::finalizeTextEdit() {
         QStringList lines = textEdit->toPlainText().split('\n');
         QPoint currentPos = textEditPosition;
 
-        currentPos.setY(currentPos.y() + fm.ascent());
+        QMargins contentMargins = textEdit->contentsMargins();
+        int leftMargin = contentMargins.left();
+        int topMargin = contentMargins.top();
+
+        currentPos.setY(currentPos.y() + fm.height() + topMargin);
+        currentPos.setX(currentPos.x() + fm.descent() + leftMargin);
 
         for (const QString& line : lines) {
             painter.drawText(currentPos, line);
