@@ -23,7 +23,7 @@
 using namespace std;
 
 #define SHARED_MEM_KEY "ScreenMeSharedMemory"
-const QString VERSION = "1.1.1";
+const QString VERSION = "1.2.0";
 
 static void showAboutDialog() {
     QMessageBox aboutBox;
