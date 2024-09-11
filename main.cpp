@@ -34,7 +34,6 @@ using namespace std;
 
 const QString VERSION = "1.2.0";
 
-
 static void showAboutDialog() {
     QMessageBox aboutBox;
     aboutBox.setWindowTitle("About ScreenMe");

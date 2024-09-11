@@ -2,10 +2,10 @@
 #include "include/config_manager.h"
 #include "include/utils.h"
 #include <QApplication>
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
-#include <QHttpMultiPart>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkRequest>
+#include <QtNetwork/QNetworkReply>
+#include <QtNetwork/QHttpMultiPart>
 #include <QStandardPaths>
 #include <QJsonDocument>
 #include <QFileDialog>
@@ -29,7 +29,10 @@ ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent, Con
     setWindowTitle("ScreenMe");
     setWindowIcon(QIcon("resources/icon.png"));
     setAttribute(Qt::WA_QuitOnClose, false);
-    setGeometry(QApplication::primaryScreen()->geometry());
+
+    QScreen* screen = QApplication::primaryScreen();
+    QRect screenGeometry = screen->geometry();
+    setGeometry(screenGeometry);
 
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
@@ -164,12 +167,12 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
         updateEditorPosition();
     }
     else if (drawing && editor->getCurrentTool() == Editor::Pen) {
-        QPixmap tempPixmap = drawingPixmap.copy();
+        QPixmap tempPixmap = originalPixmap.copy();
         QPainter painter(&tempPixmap);
         painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
         painter.drawLine(lastPoint, event->pos());
         lastPoint = event->pos();
-        drawingPixmap = tempPixmap;
+        originalPixmap = tempPixmap;
         update();
     }
     else if (shapeDrawing) {
@@ -209,10 +212,14 @@ void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
     movingSelection = false;
     currentHandle = None;
     drawing = false;
+    endPoint = event->pos();
+    qreal ratio = QApplication::primaryScreen()->devicePixelRatio();
+    endPoint.setX(endPoint.x() * ratio);
+    endPoint.setY(endPoint.y() * ratio);
 
     if (shapeDrawing) {
         saveStateForUndo();
-        QPixmap tempPixmap = drawingPixmap.copy();
+        QPixmap tempPixmap = originalPixmap.copy();
         QPainter painter(&tempPixmap);
         painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 
@@ -233,11 +240,12 @@ void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
             break;
         }
 
-        drawingPixmap = tempPixmap;
+        originalPixmap = tempPixmap;
         shapeDrawing = false;
         update();
     }
 
+    update();
     updateTooltip();
 }
 
@@ -281,7 +289,34 @@ void ScreenshotDisplay::wheelEvent(QWheelEvent* event) {
 void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event);
     QPainter painter(this);
-    painter.drawPixmap(rect(), originalPixmap, rect());
+    QScreen *screen = this->screen();
+    qreal dpr = screen->devicePixelRatio();
+
+    QPixmap scaledOriginalPixmap = originalPixmap.scaled(size() * dpr, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    QPixmap scaledDrawingPixmap = drawingPixmap.scaled(size() * dpr, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    QPixmap transparentPixmap(scaledOriginalPixmap.size());
+    transparentPixmap.fill(Qt::transparent);
+    
+    QPainter transparentPainter(&transparentPixmap);
+    transparentPainter.setOpacity(0.6);
+    transparentPainter.drawPixmap(0, 0, scaledOriginalPixmap);
+    transparentPainter.drawPixmap(0, 0, scaledDrawingPixmap);
+
+    painter.drawPixmap(0, 0, transparentPixmap);
+
+    if (selectionRect.isValid()) {
+        QRect scaledSelectionRect = QRect(selectionRect.topLeft() * dpr, selectionRect.size() * dpr);
+        QPixmap selectedPixmap = scaledOriginalPixmap.copy(scaledSelectionRect);
+        painter.drawPixmap(selectionRect.topLeft(), selectedPixmap);
+
+        QPixmap selectedDrawingPixmap = scaledDrawingPixmap.copy(scaledSelectionRect);
+        painter.drawPixmap(selectionRect.topLeft(), selectedDrawingPixmap);
+
+        painter.setPen(QPen(Qt::red, 2, Qt::DashLine));
+        painter.drawRect(selectionRect);
+        drawHandles(painter);
+    }
 
     if (shapeDrawing) {
         painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine));
@@ -335,9 +370,13 @@ void ScreenshotDisplay::onSaveRequested() {
     }
 
     QString filePath = QFileDialog::getSaveFileName(this, "Save As", defaultFileName, fileFilter);
+    QScreen* screen = this->screen();
+    qreal dpr = screen->devicePixelRatio();
+    QRect scaledSelectionRect = QRect(selectionRect.topLeft() * dpr, selectionRect.size() * dpr);
 
     if (!filePath.isEmpty()) {
-        originalPixmap.save(filePath);
+        QPixmap selectedPixmap = originalPixmap.copy(scaledSelectionRect);
+        selectedPixmap.save(filePath);
         close();
     }
 }
@@ -352,9 +391,13 @@ void ScreenshotDisplay::onPublishRequested() {
 
     editor->hide();
 
+    QScreen* screen = this->screen();
+    qreal dpr = screen->devicePixelRatio();
+    QRect scaledSelectionRect = QRect(selectionRect.topLeft() * dpr, selectionRect.size() * dpr);
+
     if (selectionRect.isValid()) {
         ScreenshotDisplay::hide();
-        QPixmap selectedPixmap = resultPixmap.copy(selectionRect);
+        QPixmap selectedPixmap = resultPixmap.copy(scaledSelectionRect);
         QApplication::clipboard()->setPixmap(selectedPixmap);
 
         QString tempFilePath = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/screenshot.png";
@@ -495,8 +538,12 @@ void ScreenshotDisplay::copySelectionToClipboard() {
     QPainter painter(&resultPixmap);
     painter.drawPixmap(0, 0, drawingPixmap);
 
+    QScreen* screen = this->screen();
+    qreal dpr = screen->devicePixelRatio();
+    QRect scaledSelectionRect = QRect(selectionRect.topLeft() * dpr, selectionRect.size() * dpr);
+
     if (selectionRect.isValid()) {
-        QPixmap selectedPixmap = resultPixmap.copy(selectionRect);
+        QPixmap selectedPixmap = resultPixmap.copy(scaledSelectionRect);
         QApplication::clipboard()->setPixmap(selectedPixmap);
     }
     else {
@@ -660,7 +707,7 @@ void ScreenshotDisplay::adjustTextEditSize() {
 void ScreenshotDisplay::finalizeTextEdit() {
     if (textEdit) {
         saveStateForUndo();
-        QPainter painter(&drawingPixmap);
+        QPainter painter(&originalPixmap);
         painter.setFont(textEdit->font());
         painter.setPen(QPen(editor->getCurrentColor()));
 
@@ -668,7 +715,12 @@ void ScreenshotDisplay::finalizeTextEdit() {
         QStringList lines = textEdit->toPlainText().split('\n');
         QPoint currentPos = textEditPosition;
 
-        currentPos.setY(currentPos.y() + fm.ascent());
+        QMargins contentMargins = textEdit->contentsMargins();
+        int leftMargin = contentMargins.left();
+        int topMargin = contentMargins.top();
+
+        currentPos.setY(currentPos.y() + fm.height() + topMargin);
+        currentPos.setX(currentPos.x() + fm.descent() + leftMargin);
 
         for (const QString& line : lines) {
             painter.drawText(currentPos, line);

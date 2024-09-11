@@ -1,4 +1,33 @@
-![Logo](resources/icon.png)
+<div align="center">
+    <img src="https://raw.githubusercontent.com/Sorok-Dva/ScreenMe/main/resources/icon.png" alt="ScreenMe Logo">
+  <h1>ScreenMe</h1>
+  <blockquote>Your Ultimate Tool for Effortless Screenshots.</blockquote>
+  <img src="https://hits.dwyl.com/Sorok-Dva/ScreenMe.svg?style=flat-square" alt="Views"><br />
+  <a href="https://github.com/Sorok-Dva/ScreenMe/releases/latest">
+    <img src="https://img.shields.io/github/license/Sorok-Dva/ScreenMe?style=for-the-badge" alt="Licence MIT">
+  </a>
+  <a href="https://github.com/Sorok-Dva/ScreenMe/releases">
+    <img src="https://img.shields.io/github/downloads/Sorok-Dva/ScreenMe/total.svg?style=for-the-badge" alt="Total downloads">
+  </a>
+  <!--<a href="https://shields.io/community#sponsors" alt="Sponsors">
+    <img src="https://img.shields.io/opencollective/sponsors/Sorok-Dva.svg?style=for-the-badge" />
+  </a>-->
+  <a href="https://github.com/Sorok-Dva/ScreenMe/pulse" alt="Activity">
+    <img src="https://img.shields.io/github/commit-activity/m/Sorok-Dva/ScreenMe.svg?style=for-the-badge" />
+  </a>
+  <a href="https://github.com/Sorok-Dva/ScreenMe/releases/latest">
+    <img src="https://img.shields.io/github/release/Sorok-Dva/ScreenMe.svg?style=for-the-badge" alt="Latest Release">
+  </a>
+  <br />
+  <a href="https://github.com/sponsors/Sorok-Dva">
+    <img src="https://img.shields.io/badge/sponsor-30363D?style=for-the-badge&logo=GitHub-Sponsors&logoColor=#EA4AAA" alt="Sponsor Me">
+  </a>
+  <a href="https://patreon.com/sorokdva">
+    <img src="https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white" alt="Support Me on Patreon">
+  </a>
+
+
+</div>
 
 # ScreenMe - Screenshot Tool
 
@@ -103,6 +132,11 @@ Contributions are welcome ! If you would like to contribute to this project, ple
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## Contributors
+
+<a href="https://github.com/sorok-dva/screenMe/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=sorok-dva/screenMe" />
+</a>
 
 ## Contact
 
