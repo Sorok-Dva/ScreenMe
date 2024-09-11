@@ -2,10 +2,10 @@
 #include "include/config_manager.h"
 #include "include/utils.h"
 #include <QApplication>
-#include <QtNetwork/QNetworkAccessManager>
-#include <QtNetwork/QNetworkRequest>
-#include <QtNetwork/QNetworkReply>
-#include <QtNetwork/QHttpMultiPart>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QHttpMultiPart>
 #include <QStandardPaths>
 #include <QJsonDocument>
 #include <QFileDialog>
@@ -25,11 +25,14 @@ ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent, Con
     drawing(false), shapeDrawing(false), currentColor(Qt::black), currentTool(Editor::None), borderWidth(5),
     drawingPixmap(pixmap.size()), currentFont("Arial", 16), text("Editable Text"), textEdit(nullptr) {
 
-    setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+    setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
     setWindowTitle("ScreenMe");
     setWindowIcon(QIcon("resources/icon.png"));
     setAttribute(Qt::WA_QuitOnClose, false);
     setGeometry(QApplication::primaryScreen()->geometry());
+
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
     initializeEditor();
     configureShortcuts();
@@ -92,28 +95,21 @@ void ScreenshotDisplay::closeEvent(QCloseEvent* event) {
     QWidget::closeEvent(event);
 }
 
-QPoint ScreenshotDisplay::adjustForDpi(const QPoint& point) {
-    QScreen* screen = QGuiApplication::primaryScreen();
-    qreal dpi = screen->logicalDotsPerInch();
-    return point * (dpi / 96.0);
-}
-
 void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
+    origin = event->globalPos();
     if (editor->getCurrentTool() == Editor::None) {
-        QPoint adjustedPos = adjustForDpi(event->pos());
-
-        HandlePosition handle = handleAtPoint(adjustedPos);
+        HandlePosition handle = handleAtPoint(event->pos());
         if (handle != None) {
             currentHandle = handle;
-            handleOffset = adjustedPos - selectionRect.topLeft();
+            handleOffset = event->pos() - selectionRect.topLeft();
         }
-        else if (selectionRect.contains(adjustedPos)) {
+        else if (selectionRect.contains(event->pos())) {
             movingSelection = true;
-            selectionOffset = adjustedPos - selectionRect.topLeft();
+            selectionOffset = event->pos() - selectionRect.topLeft();
         }
         else {
             selectionStarted = true;
-            origin = adjustedPos;
+            origin = event->pos();
             selectionRect = QRect(origin, QSize());
             currentHandle = None;
             movingSelection = false;
@@ -128,10 +124,10 @@ void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
             textEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
             textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
             textEdit->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            textEdit->move(adjustForDpi(event->pos()));
+            textEdit->move(event->pos());
             textEdit->show();
             textEdit->setFocus();
-            textEditPosition = adjustForDpi(event->pos());
+            textEditPosition = event->pos();
             connect(textEdit, &CustomTextEdit::focusOut, this, &ScreenshotDisplay::finalizeTextEdit);
             connect(textEdit, &QTextEdit::textChanged, this, &ScreenshotDisplay::adjustTextEditSize);
         }
@@ -142,8 +138,8 @@ void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
     else {
         saveStateForUndo();
         drawing = true;
-        lastPoint = adjustForDpi(event->pos());
-        origin = adjustForDpi(event->pos());
+        lastPoint = event->pos();
+        origin = event->pos();
         if (editor->getCurrentTool() != Editor::Pen) {
             shapeDrawing = true;
             currentShapeRect = QRect(lastPoint, QSize());
@@ -152,27 +148,15 @@ void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
 }
 
 void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
-    QPoint adjustedPos = adjustForDpi(event->pos());
-
     if (selectionRect.isValid() && editor->isHidden()) {
         updateEditorPosition();
         editor->show();
-    }
-
-    if (currentHandle != None) {
-        resizeSelection(adjustedPos);
-        update();
-        updateTooltip();
-        updateEditorPosition();
-    } else {
-        HandlePosition handle = handleAtPoint(adjustedPos);
-        setCursor(cursorForHandle(handle));
     }
     if (selectionRect.isValid()) {
         update();
     }
     if (selectionStarted) {
-        QRect newRect = QRect(origin, adjustedPos).normalized();
+        QRect newRect = QRect(origin, event->globalPos()).normalized();
         QRect screenRect = QApplication::primaryScreen()->geometry();
         selectionRect = newRect.intersected(screenRect);
         update();
@@ -183,18 +167,18 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
         QPixmap tempPixmap = drawingPixmap.copy();
         QPainter painter(&tempPixmap);
         painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-        painter.drawLine(lastPoint, adjustedPos);
-        lastPoint = adjustedPos;
+        painter.drawLine(lastPoint, event->pos());
+        lastPoint = event->pos();
         drawingPixmap = tempPixmap;
         update();
     }
     else if (shapeDrawing) {
-        currentShapeRect = QRect(lastPoint, adjustedPos).normalized();
-        drawingEnd = adjustedPos;
+        currentShapeRect = QRect(lastPoint, event->pos()).normalized();
+        drawingEnd = event->pos();
         update();
     }
     else if (movingSelection) {
-        QPoint topLeft = adjustedPos - selectionOffset;
+        QPoint topLeft = event->pos() - selectionOffset;
         QRect screenRect = QApplication::primaryScreen()->geometry();
         if (topLeft.x() < 0) topLeft.setX(0);
         if (topLeft.y() < 0) topLeft.setY(0);
@@ -210,13 +194,13 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
         updateEditorPosition();
     }
     else if (currentHandle != None) {
-        resizeSelection(adjustedPos);
+        resizeSelection(event->pos());
         update();
         updateTooltip();
         updateEditorPosition();
     }
 
-    HandlePosition handle = handleAtPoint(adjustedPos);
+    HandlePosition handle = handleAtPoint(event->pos());
     setCursor(cursorForHandle(handle));
 }
 
@@ -297,28 +281,7 @@ void ScreenshotDisplay::wheelEvent(QWheelEvent* event) {
 void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event);
     QPainter painter(this);
-
-    QPixmap transparentPixmap(originalPixmap.size());
-    transparentPixmap.fill(Qt::transparent);
-
-    QPainter transparentPainter(&transparentPixmap);
-    transparentPainter.setOpacity(0.6);
-    transparentPainter.drawPixmap(0, 0, originalPixmap);
-    transparentPainter.drawPixmap(0, 0, drawingPixmap);
-
-    painter.drawPixmap(0, 0, transparentPixmap);
-
-    if (selectionRect.isValid()) {
-        QPixmap selectedPixmap = originalPixmap.copy(selectionRect);
-        painter.drawPixmap(selectionRect.topLeft(), selectedPixmap);
-
-        QPixmap selectedDrawingPixmap = drawingPixmap.copy(selectionRect);
-        painter.drawPixmap(selectionRect.topLeft(), selectedDrawingPixmap);
-
-        painter.setPen(QPen(Qt::red, 2, Qt::DashLine));
-        painter.drawRect(selectionRect);
-        drawHandles(painter);
-    }
+    painter.drawPixmap(rect(), originalPixmap, rect());
 
     if (shapeDrawing) {
         painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine));
@@ -522,6 +485,7 @@ void ScreenshotDisplay::onPublishRequested() {
     }
 }
 
+
 void ScreenshotDisplay::onCloseRequested() {
     close();
 }
@@ -670,9 +634,9 @@ void ScreenshotDisplay::drawArrow(QPainter& painter, const QPoint& start, const 
     const double arrowHeadAngle = M_PI / 6;
 
     QPoint arrowP1 = end + QPoint(std::cos(angle + arrowHeadAngle) * arrowHeadLength,
-                                  std::sin(angle + arrowHeadAngle) * arrowHeadLength);
+        std::sin(angle + arrowHeadAngle) * arrowHeadLength);
     QPoint arrowP2 = end + QPoint(std::cos(angle - arrowHeadAngle) * arrowHeadLength,
-                                  std::sin(angle - arrowHeadAngle) * arrowHeadLength);
+        std::sin(angle - arrowHeadAngle) * arrowHeadLength);
 
     QPolygon arrowHead;
     arrowHead << end << arrowP1 << arrowP2;
@@ -727,14 +691,4 @@ void ScreenshotDisplay::undo() {
         undoStack.pop();
         update();
     }
-}
-
-void ScreenshotDisplay::captureScreen() {
-    QScreen* screen = QGuiApplication::primaryScreen();
-    qreal dpi = screen->logicalDotsPerInch();
-    QRect adjustedRect = QRect(selectionRect.topLeft() * (dpi / 96.0), selectionRect.size() * (dpi / 96.0));
-
-    QPixmap originalPixmap = screen->grabWindow(0, adjustedRect.x(), adjustedRect.y(), adjustedRect.width(), adjustedRect.height());
-    drawingPixmap = originalPixmap;
-    update();
 }

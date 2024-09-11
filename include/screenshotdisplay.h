@@ -1,9 +1,7 @@
-#pragma once
-
 #ifndef SCREENSHOTDISPLAY_H
 #define SCREENSHOTDISPLAY_H
 
-#include <stack> 
+#include <stack>
 #include <QWidget>
 #include <QPixmap>
 #include <QLabel>
@@ -64,11 +62,9 @@ private:
     void saveStateForUndo();
     void finalizeTextEdit();
     void adjustTextEditSize();
-    void captureScreen();
     HandlePosition handleAtPoint(const QPoint& point);
     void resizeSelection(const QPoint& point);
     Qt::CursorShape cursorForHandle(HandlePosition handle);
-    QPoint adjustForDpi(const QPoint& point);
 
     std::stack<QPixmap> undoStack;
     QPixmap originalPixmap;
