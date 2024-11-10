@@ -30,17 +30,50 @@ ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent, Con
     setWindowIcon(QIcon("resources/icon.png"));
     setAttribute(Qt::WA_QuitOnClose, false);
 
-    QScreen* screen = QApplication::primaryScreen();
-    QRect screenGeometry = screen->geometry();
-    setGeometry(screenGeometry);
+    // Obtenir la géométrie combinée de tous les écrans
+    QRect combinedGeometry;
+    const auto screens = QGuiApplication::screens();
+    for (QScreen* screen : screens) {
+        combinedGeometry = combinedGeometry.united(screen->geometry());
+    }
+
+    // Ajuster la fenêtre pour qu'elle couvre tous les écrans
+    setGeometry(combinedGeometry);  // Fixer la géométrie sur tous les écrans
+
+    // Désactiver showFullScreen() et forcer l'affichage sur tous les écrans
+    show();  // Affiche la fenêtre couvrant la géométrie totale des écrans
+
+    // Capturer tous les écrans
+    captureAllScreens();
 
     initializeEditor();
     configureShortcuts();
+}
 
+void ScreenshotDisplay::captureAllScreens() {
+    QList<QScreen*> screens = QGuiApplication::screens();
+    QRect combinedGeometry;
+
+    for (QScreen* screen : screens) {
+        combinedGeometry = combinedGeometry.united(screen->geometry());
+    }
+
+    QPixmap combinedPixmap(combinedGeometry.size());
+    QPainter painter(&combinedPixmap);
+
+    for (QScreen* screen : screens) {
+        QPixmap screenPixmap = screen->grabWindow(0);
+        QPoint screenTopLeft = screen->geometry().topLeft();
+        painter.drawPixmap(screenTopLeft - combinedGeometry.topLeft(), screenPixmap);
+    }
+
+    painter.end();
+
+    originalPixmap = combinedPixmap;
+    drawingPixmap = QPixmap(combinedPixmap.size());
     drawingPixmap.fill(Qt::transparent);
-    QFontMetrics fm(currentFont);
-    textBoundingRect = QRect(QPoint(100, 100), fm.size(0, text));
-    showFullScreen();
+
+    update(); 
 }
 
 void ScreenshotDisplay::initializeEditor() {
@@ -97,110 +130,50 @@ void ScreenshotDisplay::closeEvent(QCloseEvent* event) {
 
 void ScreenshotDisplay::mousePressEvent(QMouseEvent* event) {
     if (editor->getCurrentTool() == Editor::None) {
-        HandlePosition handle = handleAtPoint(event->pos());
+        HandlePosition handle = handleAtPoint(event->globalPosition().toPoint());
         if (handle != None) {
             currentHandle = handle;
-            handleOffset = event->pos() - selectionRect.topLeft();
+            handleOffset = event->globalPosition().toPoint() - selectionRect.topLeft();
         }
-        else if (selectionRect.contains(event->pos())) {
+        else if (selectionRect.contains(event->globalPosition().toPoint())) {
             movingSelection = true;
-            selectionOffset = event->pos() - selectionRect.topLeft();
+            selectionOffset = event->globalPosition().toPoint() - selectionRect.topLeft();
         }
         else {
+            // Démarrer une nouvelle sélection en utilisant des coordonnées globales
             selectionStarted = true;
-            origin = event->pos();
+            origin = event->globalPosition().toPoint();  // Utiliser des coordonnées globales
             selectionRect = QRect(origin, QSize());
             currentHandle = None;
             movingSelection = false;
         }
     }
-    else if (editor->getCurrentTool() == Editor::Text) {
-        if (!textEdit) {
-            textEdit = new CustomTextEdit(this);
-            textEdit->setFont(currentFont);
-            textEdit->setTextColor(currentColor);
-            textEdit->setStyleSheet("background: transparent;");
-            textEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-            textEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-            textEdit->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            textEdit->move(event->pos());
-            textEdit->show();
-            textEdit->setFocus();
-            textEditPosition = event->pos();
-            connect(textEdit, &CustomTextEdit::focusOut, this, &ScreenshotDisplay::finalizeTextEdit);
-            connect(textEdit, &QTextEdit::textChanged, this, &ScreenshotDisplay::adjustTextEditSize);
-        }
-        else {
-            finalizeTextEdit();
-        }
-    }
-    else {
-        saveStateForUndo();
-        drawing = true;
-        lastPoint = event->pos();
-        origin = event->pos();
-        if (editor->getCurrentTool() != Editor::Pen) {
-            shapeDrawing = true;
-            currentShapeRect = QRect(lastPoint, QSize());
-        }
-    }
 }
 
 void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
-    if (selectionRect.isValid() && editor->isHidden()) {
-        updateEditorPosition();
-        editor->show();
-    }
-    if (selectionRect.isValid()) {
-        update();
-    }
     if (selectionStarted) {
-        QRect newRect = QRect(origin, event->pos()).normalized();
-        QRect screenRect = QApplication::primaryScreen()->geometry();
-        selectionRect = newRect.intersected(screenRect);
+        // Utiliser des coordonnées globales pour gérer la sélection à travers plusieurs écrans
+        QPoint globalPos = event->globalPosition().toPoint();
+        QRect newRect = QRect(origin, globalPos).normalized();
+        selectionRect = newRect;  // Permettre la sélection sur plusieurs écrans sans restriction
         update();
-        updateTooltip();
-        updateEditorPosition();
+    }
+    else if (movingSelection) {
+        // Déplacer la sélection avec des coordonnées globales
+        QPoint topLeft = event->globalPosition().toPoint() - selectionOffset;
+        selectionRect.moveTopLeft(topLeft);
+        update();
     }
     else if (drawing && editor->getCurrentTool() == Editor::Pen) {
         QPixmap tempPixmap = originalPixmap.copy();
         QPainter painter(&tempPixmap);
         painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-        painter.drawLine(lastPoint, event->pos());
-        lastPoint = event->pos();
+        QPoint currentPos = event->globalPosition().toPoint(); // Utiliser des coordonnées globales
+        painter.drawLine(lastPoint, currentPos);
+        lastPoint = currentPos;
         originalPixmap = tempPixmap;
         update();
     }
-    else if (shapeDrawing) {
-        currentShapeRect = QRect(lastPoint, event->pos()).normalized();
-        drawingEnd = event->pos();
-        update();
-    }
-    else if (movingSelection) {
-        QPoint topLeft = event->pos() - selectionOffset;
-        QRect screenRect = QApplication::primaryScreen()->geometry();
-        if (topLeft.x() < 0) topLeft.setX(0);
-        if (topLeft.y() < 0) topLeft.setY(0);
-        if (topLeft.x() + selectionRect.width() > screenRect.width()) {
-            topLeft.setX(screenRect.width() - selectionRect.width());
-        }
-        if (topLeft.y() + selectionRect.height() > screenRect.height()) {
-            topLeft.setY(screenRect.height() - selectionRect.height());
-        }
-        selectionRect.moveTopLeft(topLeft);
-        update();
-        updateTooltip();
-        updateEditorPosition();
-    }
-    else if (currentHandle != None) {
-        resizeSelection(event->pos());
-        update();
-        updateTooltip();
-        updateEditorPosition();
-    }
-
-    HandlePosition handle = handleAtPoint(event->pos());
-    setCursor(cursorForHandle(handle));
 }
 
 void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
@@ -285,6 +258,7 @@ void ScreenshotDisplay::wheelEvent(QWheelEvent* event) {
 void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event);
     QPainter painter(this);
+
     QScreen *screen = this->screen();
     qreal dpr = screen->devicePixelRatio();
 

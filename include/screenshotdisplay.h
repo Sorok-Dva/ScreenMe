@@ -52,6 +52,7 @@ private slots:
     void undo();
 
 private:
+    void captureAllScreens();
     void initializeEditor();
     void configureShortcuts();
     void updateTooltip();
