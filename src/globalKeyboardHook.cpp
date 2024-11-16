@@ -1,4 +1,4 @@
-#include "include/globalKeyboardHook.h"
+#include "../include/globalKeyboardHook.h"
 #include <QDebug>
 HHOOK GlobalKeyboardHook::hHook = nullptr;
 GlobalKeyboardHook* GlobalKeyboardHook::instance = nullptr;

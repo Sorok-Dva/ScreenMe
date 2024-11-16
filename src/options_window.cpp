@@ -1,4 +1,4 @@
-#include "include/options_window.h"
+#include "../include/options_window.h"
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -10,7 +10,7 @@
 #include <QKeySequence>
 #include <QCheckBox>
 #include <QDebug>
-#include "include/globalKeyboardHook.h"
+#include "../include/globalKeyboardHook.h"
 
 OptionsWindow::OptionsWindow(ConfigManager* configManager, QWidget* parent)
     : QDialog(parent), configManager(configManager), hotkeyEditing(nullptr) {

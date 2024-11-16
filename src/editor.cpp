@@ -1,4 +1,4 @@
-#include "include/editor.h"
+#include "../include/editor.h"
 #include <QIcon>
 
 Editor::Editor(QWidget* parent)

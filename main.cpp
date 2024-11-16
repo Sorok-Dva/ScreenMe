@@ -10,12 +10,12 @@
 #include <QTextStream>
 #include <QMessageBox>
 #include <QSharedMemory>
-#include <include/options_window.h>
-#include <include/config_manager.h>
+#include "include/options_window.h"
+#include "include/config_manager.h"
 #include "include/login_loader.h"
 #include "include/login_server.h"
-#include <include/main_window.h>
-#include <include/utils.h>
+#include "include/main_window.h"
+#include "include/utils.h"
 #include "include/hotkeyEventFilter.h"
 #include "include/globalKeyboardHook.h"
 

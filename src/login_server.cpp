@@ -1,4 +1,4 @@
-#include "include/login_server.h"
+#include "../include/login_server.h"
 #include <QDebug>
 
 LoginServer::LoginServer(QObject* parent)

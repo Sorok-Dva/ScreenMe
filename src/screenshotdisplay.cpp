@@ -1,6 +1,6 @@
-#include "include/screenshotdisplay.h"
-#include "include/config_manager.h"
-#include "include/utils.h"
+#include "../include/screenshotdisplay.h"
+#include "../include/config_manager.h"
+#include "../include/utils.h"
 #include <QApplication>
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkRequest>

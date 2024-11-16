@@ -1,4 +1,4 @@
-#include "include/hotkeyEventFilter.h"
+#include "../include/hotkeyEventFilter.h"
 #include <Windows.h>
 
 HotkeyEventFilter::HotkeyEventFilter(QMainWindow* mainWindow)

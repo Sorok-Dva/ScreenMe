@@ -1,5 +1,5 @@
-#include "include/utils.h"
-#include "include/screenshotdisplay.h"
+#include "../include/utils.h"
+#include "../include/screenshotdisplay.h"
 #include <QDir>
 #include <QScreen>
 #include <QApplication>

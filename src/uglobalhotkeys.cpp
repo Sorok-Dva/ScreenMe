@@ -7,8 +7,8 @@
 #include <QApplication>
 #endif
 
-#include "include/hotkeymap.h"
-#include "include/uglobalhotkeys.h"
+#include "../include/hotkeymap.h"
+#include "../include/uglobalhotkeys.h"
 
 UGlobalHotkeys::UGlobalHotkeys(QWidget *parent)
     : QWidget(parent)

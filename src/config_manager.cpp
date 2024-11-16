@@ -1,5 +1,5 @@
-#include "include/config_manager.h"
-#include "include/utils.h"
+#include "../include/config_manager.h"
+#include "../include/utils.h"
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>

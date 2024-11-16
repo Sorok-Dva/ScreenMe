@@ -1,13 +1,13 @@
-#include "include/main_window.h"
-#include "include/utils.h"
+#include "../include/main_window.h"
+#include "../include/utils.h"
 #include <QScreen>
 #include <QGuiApplication>
 #include <QPixmap>
 #include <QJsonObject>
 #include <QDebug>
-#include "include/options_window.h"
-#include "include/screenshotdisplay.h"
-#include "include/uglobalhotkeys.h"
+#include "../include/options_window.h"
+#include "../include/screenshotdisplay.h"
+#include "../include/uglobalhotkeys.h"
 
 MainWindow::MainWindow(ConfigManager* configManager, QWidget* parent)
     : QMainWindow(parent), configManager(configManager), isScreenshotDisplayed(false) {
