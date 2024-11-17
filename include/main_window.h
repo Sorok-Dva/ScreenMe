@@ -2,6 +2,7 @@
 
 #include <QWidget>
 #include <QMainWindow>
+#include <QNetworkReply>
 #include <QJsonObject>
 #include <QPointer>
 #include "screenshotdisplay.h"
@@ -19,6 +20,12 @@ public slots:
     void handleHotkeyActivated(size_t id);
     void handleScreenshotClosed();
     void reloadHotkeys();
+    void onUpdateCheckFinished(QNetworkReply* reply);
+    void downloadUpdate(const QString& downloadUrl);
+    void onDownloadFinished(QNetworkReply* reply);
+
+public:
+    void checkForUpdates();
 
 signals:
     void screenshotClosed();
