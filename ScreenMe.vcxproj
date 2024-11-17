@@ -130,6 +130,7 @@
     </ClCompile>
     <ClCompile Include="src\config_manager.cpp" />
     <ClCompile Include="src\options_window.cpp" />
+    <ClCompile Include="update.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\config_manager.h" />

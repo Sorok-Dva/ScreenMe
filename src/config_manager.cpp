@@ -16,6 +16,7 @@ ConfigManager::ConfigManager(const QString& configPath) : configPath(configPath)
         defaultConfig["image_quality"] = 90;
         defaultConfig["default_save_folder"] = QDir::homePath() + "/Pictures/ScreenMe";
         defaultConfig["start_with_system"] = true;
+        defaultConfig["skipVersion"] = "";
         saveConfig(defaultConfig);
     }
 }

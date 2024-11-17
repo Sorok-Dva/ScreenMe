@@ -23,7 +23,6 @@
 using namespace std;
 
 #define SHARED_MEM_KEY "ScreenMeSharedMemory"
-const QString VERSION = "1.2.0";
 
 static void showAboutDialog() {
     QMessageBox aboutBox;
@@ -79,6 +78,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
         setAutoStart(false);
     }
 
+    MainWindow w(&configManager);
+    w.checkForUpdates();
+
     QAction loginAction("Login to ScreenMe", &trayMenu);
     QAction takeScreenshotAction("Take Screenshot", &trayMenu);
     QAction takeFullscreenScreenshotAction("Take Fullscreen Screenshot", &trayMenu);
@@ -86,6 +88,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
     QAction helpAction("❓Help", &trayMenu);
     QAction reportBugAction("🛠️ Report a bug", &trayMenu);
     QAction optionsAction("Options", &trayMenu);
+    QAction checkUpdateAction("Check for update", &trayMenu);
     QAction exitAction("Exit", &trayMenu);
 
     QAction myGalleryAction("My Gallery", &trayMenu);
@@ -111,6 +114,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
     trayMenu.addAction(&reportBugAction);
     trayMenu.addSeparator();
     trayMenu.addAction(&optionsAction);
+    trayMenu.addAction(&checkUpdateAction);
     trayMenu.addAction(&exitAction);
     trayIcon.setContextMenu(&trayMenu);
     trayIcon.setToolTip("Press the configured key combination to take a screenshot");
@@ -183,6 +187,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
         OptionsWindow optionsWindow(&configManager);
         QObject::connect(&optionsWindow, &OptionsWindow::reloadHotkeys, &mainWindow, &MainWindow::reloadHotkeys);
         optionsWindow.exec();
+    });
+
+    QObject::connect(&checkUpdateAction, &QAction::triggered, [&]() {
+        config["skipVersion"] = "";
+
+        configManager.saveConfig(config);
+        w.checkForUpdates();
     });
 
     trayIcon.show();
