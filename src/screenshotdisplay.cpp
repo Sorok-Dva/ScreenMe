@@ -390,6 +390,10 @@ void ScreenshotDisplay::onPublishRequested() {
     qreal dpr = screen->devicePixelRatio();
     QRect scaledSelectionRect = QRect(selectionRect.topLeft() * dpr, selectionRect.size() * dpr);
 
+    QJsonObject config = configManager->loadConfig();
+    QString defaultSaveFolder = config["default_save_folder"].toString();
+    QString fileExtension = config["file_extension"].toString();
+
     if (selectionRect.isValid()) {
         ScreenshotDisplay::hide();
         QPixmap selectedPixmap = resultPixmap.copy(scaledSelectionRect);
@@ -398,6 +402,9 @@ void ScreenshotDisplay::onPublishRequested() {
         QString tempFilePath = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/screenshot.png";
         selectedPixmap.save(tempFilePath);
 
+        QString savePath = getUniqueFilePath(defaultSaveFolder, "screenshot", fileExtension);
+        selectedPixmap.save(savePath);
+        qDebug() << "Saving screenshot to:" << savePath;
         QString jsonStr = loadLoginInfo();
         QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
         QJsonObject loginInfo = jsonDoc.object();
