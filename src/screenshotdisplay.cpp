@@ -685,8 +685,8 @@ void ScreenshotDisplay::drawArrow(QPainter& painter, const QPoint& start, const 
 
     double angle = std::atan2(start.y() - end.y(), start.x() - end.x());
 
-    const double arrowHeadLength = borderWidth * 5; 
-    const double arrowHeadAngle = M_PI / 15;        // plus pointu
+    const double arrowHeadLength = borderWidth * 5;
+    const double arrowHeadAngle = M_PI / 15;
 
     QPoint arrowP1 = end + QPoint(std::cos(angle + arrowHeadAngle) * arrowHeadLength,
         std::sin(angle + arrowHeadAngle) * arrowHeadLength);
