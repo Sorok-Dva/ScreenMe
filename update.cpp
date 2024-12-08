@@ -7,6 +7,7 @@
 #include <QFile>
 #include <QProcess>
 #include <QProgressDialog>
+#include <QStandardPaths>
 #include "include/main_window.h"
 #include "include/utils.h"
 
@@ -88,7 +89,8 @@ void MainWindow::downloadUpdate(const QString& downloadUrl) {
 
 void MainWindow::onDownloadFinished(QNetworkReply* reply) {
     if (reply->error() == QNetworkReply::NoError) {
-        QFile file("update.exe");
+        QString tempDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+        QFile file(tempDir + "/update.exe");
         if (file.open(QIODevice::WriteOnly)) {
             file.write(reply->readAll());
             file.close();
@@ -99,7 +101,7 @@ void MainWindow::onDownloadFinished(QNetworkReply* reply) {
                 "The update has been downloaded. Do you want to install now ?",
                 QMessageBox::Yes | QMessageBox::No);
             if (replyButton == QMessageBox::Yes) {
-                QProcess::startDetached("update.exe");
+                QProcess::startDetached(tempDir + "/update.exe");
                 QApplication::exit(0);
             }
         }
