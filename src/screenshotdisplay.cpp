@@ -31,9 +31,17 @@ ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent, Con
     setWindowIcon(QIcon("resources/icon.png"));
     setAttribute(Qt::WA_QuitOnClose, false);
 
-    QScreen* screen = QApplication::primaryScreen();
-    QRect screenGeometry = screen->geometry();
-    setGeometry(screenGeometry);
+    QRect totalGeometry;
+    const auto screens = QGuiApplication::screens();
+    for (QScreen* scr : screens) {
+        totalGeometry = totalGeometry.united(scr->geometry());
+    }
+
+    if (totalGeometry.x() < 0 || totalGeometry.y() < 0) {
+        totalGeometry.translate(-totalGeometry.x(), -totalGeometry.y());
+    }
+
+    setGeometry(totalGeometry);
 
     initializeEditor();
     configureShortcuts();
@@ -41,7 +49,7 @@ ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent, Con
     drawingPixmap.fill(Qt::transparent);
     QFontMetrics fm(currentFont);
     textBoundingRect = QRect(QPoint(100, 100), fm.size(0, text));
-    showFullScreen();
+    show();
 }
 
 void ScreenshotDisplay::initializeEditor() {
@@ -56,7 +64,12 @@ void ScreenshotDisplay::initializeEditor() {
     });
     connect(editor.get(), &Editor::saveRequested, this, &ScreenshotDisplay::onSaveRequested);
     connect(editor.get(), &Editor::copyRequested, this, &ScreenshotDisplay::copySelectionToClipboard);
-    connect(editor.get(), &Editor::publishRequested, this, &ScreenshotDisplay::onPublishRequested);
+    connect(editor.get(), &Editor::publishRequested, this, [this]() {
+        onPublishRequested(false);
+    });
+    connect(editor.get(), &Editor::searchRequested, this, [this]() {
+        onPublishRequested(true);
+        });
     connect(editor.get(), &Editor::closeRequested, this, &ScreenshotDisplay::onCloseRequested);
 }
 
@@ -377,7 +390,7 @@ void ScreenshotDisplay::onSaveRequested() {
     }
 }
 
-void ScreenshotDisplay::onPublishRequested() {
+void ScreenshotDisplay::onPublishRequested(bool searchImage) {
     if (textEdit) {
         finalizeTextEdit();
     }
@@ -459,7 +472,7 @@ void ScreenshotDisplay::onPublishRequested() {
             qDebug() << "Network Error:" << reply->errorString();
         });
 
-        connect(reply, &QNetworkReply::finished, this, [reply, file, tempFilePath, this, progressDialog, screenGeometry, loginInfo]() {
+        connect(reply, &QNetworkReply::finished, this, [reply, file, tempFilePath, this, progressDialog, searchImage, screenGeometry, loginInfo]() {
             progressDialog->close();
 
             if (reply->error() == QNetworkReply::NoError) {
@@ -469,51 +482,58 @@ void ScreenshotDisplay::onPublishRequested() {
                 QString url = jsonObject["url"].toString();
                 QString id = QString::number(jsonObject["id"].toInt());
                 QString link = SCREEN_ME_HOST + "/" + url;
+                QString imageUrl = jsonObject["imageUrl"].toString();
 
-                QMessageBox msgBox(this);
-                msgBox.setWindowTitle("Screenshot Uploaded");
-                msgBox.setText("Screenshot uploaded successfully ! Link: " + link);
-                QPushButton* copyButton = msgBox.addButton(tr("Copy"), QMessageBox::ActionRole);
-                QPushButton* openButton = msgBox.addButton(tr("Open"), QMessageBox::ActionRole);
-                msgBox.addButton(QMessageBox::Ok);
+                if (!searchImage) {
+                    QMessageBox msgBox(this);
+                    msgBox.setWindowTitle("Screenshot Uploaded");
+                    msgBox.setText("Screenshot uploaded successfully ! Link: " + link);
+                    QPushButton* copyButton = msgBox.addButton(tr("Copy"), QMessageBox::ActionRole);
+                    QPushButton* openButton = msgBox.addButton(tr("Open"), QMessageBox::ActionRole);
+                    msgBox.addButton(QMessageBox::Ok);
 
-                QCheckBox* privateCheckBox = nullptr;
-                if (!loginInfo["token"].toString().isEmpty()) {
-                    privateCheckBox = new QCheckBox("Private", &msgBox);
-                    msgBox.setCheckBox(privateCheckBox);
+                    QCheckBox* privateCheckBox = nullptr;
+                    if (!loginInfo["token"].toString().isEmpty()) {
+                        privateCheckBox = new QCheckBox("Private", &msgBox);
+                        msgBox.setCheckBox(privateCheckBox);
 
-                    connect(privateCheckBox, &QCheckBox::toggled, this, [id, loginInfo](bool checked) {
-                        QNetworkAccessManager* manager = new QNetworkAccessManager();
-                        QUrl url(SCREEN_ME_HOST + "/api/screenshot/" + id);
-                        QNetworkRequest request(url);
+                        connect(privateCheckBox, &QCheckBox::toggled, this, [id, loginInfo](bool checked) {
+                            QNetworkAccessManager* manager = new QNetworkAccessManager();
+                            QUrl url(SCREEN_ME_HOST + "/api/screenshot/" + id);
+                            QNetworkRequest request(url);
 
-                        request.setRawHeader("Authorization", "Bearer " + loginInfo["token"].toString().toUtf8());
-                        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+                            request.setRawHeader("Authorization", "Bearer " + loginInfo["token"].toString().toUtf8());
+                            request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
-                        QJsonObject json;
-                        json["privacy"] = checked ? "private" : "public";
-                        QJsonDocument doc(json);
-                        QByteArray data = doc.toJson();
+                            QJsonObject json;
+                            json["privacy"] = checked ? "private" : "public";
+                            QJsonDocument doc(json);
+                            QByteArray data = doc.toJson();
 
-                        QNetworkReply* reply = manager->sendCustomRequest(request, "PATCH", data);
-                        connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
-                    });
+                            QNetworkReply* reply = manager->sendCustomRequest(request, "PATCH", data);
+                            connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
+                            });
+                    }
+
+                    connect(copyButton, &QPushButton::clicked, [link]() {
+                        QClipboard* clipboard = QGuiApplication::clipboard();
+                        clipboard->setText(link);
+                        });
+
+                    connect(openButton, &QPushButton::clicked, [link]() {
+                        QDesktopServices::openUrl(QUrl(link));
+                        });
+
+                    // Position the message box at the bottom right of the screen
+                    msgBox.show();
+                    QSize msgBoxSize = msgBox.sizeHint();
+                    msgBox.move(screenGeometry.bottomRight() - QPoint(msgBoxSize.width() + 10, msgBoxSize.height() + 100));
+                    msgBox.exec();
                 }
-
-                connect(copyButton, &QPushButton::clicked, [link]() {
-                    QClipboard* clipboard = QGuiApplication::clipboard();
-                    clipboard->setText(link);
-                });
-
-                connect(openButton, &QPushButton::clicked, [link]() {
-                    QDesktopServices::openUrl(QUrl(link));
-                });
-
-                // Position the message box at the bottom right of the screen
-                msgBox.show();
-                QSize msgBoxSize = msgBox.sizeHint();
-                msgBox.move(screenGeometry.bottomRight() - QPoint(msgBoxSize.width() + 10, msgBoxSize.height() + 100));
-                msgBox.exec();
+                else {
+                    QDesktopServices::openUrl(QUrl("https://tineye.com/search?url=" + imageUrl));
+                }
+                
             }
             else {
                 QString errorString = reply->errorString();
