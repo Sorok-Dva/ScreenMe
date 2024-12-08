@@ -14,6 +14,6 @@ void clearLoginInfo();
 void setAutoStart(bool enable);
 
 
-const QString SCREEN_ME_HOST = "http://127.0.0.1:3001";
-//const QString SCREEN_ME_HOST = "https://screen-me.cloud";
+//const QString SCREEN_ME_HOST = "http://127.0.0.1:3001";
+const QString SCREEN_ME_HOST = "https://screen-me.cloud";
 const QString VERSION = "1.3.01";
