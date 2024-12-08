@@ -8,6 +8,7 @@
 #include <QtNetwork/QHttpMultiPart>
 #include <QStandardPaths>
 #include <QJsonDocument>
+#include <QDesktopServices>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -473,6 +474,7 @@ void ScreenshotDisplay::onPublishRequested() {
                 msgBox.setWindowTitle("Screenshot Uploaded");
                 msgBox.setText("Screenshot uploaded successfully ! Link: " + link);
                 QPushButton* copyButton = msgBox.addButton(tr("Copy"), QMessageBox::ActionRole);
+                QPushButton* openButton = msgBox.addButton(tr("Open"), QMessageBox::ActionRole);
                 msgBox.addButton(QMessageBox::Ok);
 
                 QCheckBox* privateCheckBox = nullptr;
@@ -501,6 +503,10 @@ void ScreenshotDisplay::onPublishRequested() {
                 connect(copyButton, &QPushButton::clicked, [link]() {
                     QClipboard* clipboard = QGuiApplication::clipboard();
                     clipboard->setText(link);
+                });
+
+                connect(openButton, &QPushButton::clicked, [link]() {
+                    QDesktopServices::openUrl(QUrl(link));
                 });
 
                 // Position the message box at the bottom right of the screen
