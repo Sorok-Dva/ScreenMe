@@ -30,6 +30,7 @@ Editor::Editor(QWidget* parent)
     createActionButton("Save", QIcon(":/resources/icons/save.png"), "saveRequested");
     createActionButton("Copy to clipboard (CTRL + C)", QIcon(":/resources/icons/copy.png"), "copyRequested");
     createActionButton("Upload to ScreenMe", QIcon(":/resources/icons/upload.png"), "publishRequested");
+    createActionButton("Find similar image", QIcon(":/resources/icons/search.png"), "searchRequested");
     createActionButton("Close editor", QIcon(":/resources/icons/close.png"), "closeRequested");
     layout->addLayout(actionLayout);
 }
