@@ -10,16 +10,18 @@
 #include "include/main_window.h"
 #include "include/utils.h"
 
-void MainWindow::checkForUpdates() {
+void MainWindow::checkForUpdates(bool fromAction) {
     QNetworkAccessManager* manager = new QNetworkAccessManager(this);
-    connect(manager, &QNetworkAccessManager::finished, this, &MainWindow::onUpdateCheckFinished);
+    connect(manager, &QNetworkAccessManager::finished, this, [this, fromAction](QNetworkReply* reply) {
+        this->onUpdateCheckFinished(reply, fromAction);
+        });
 
     QUrl url("https://screen-me.cloud/update.json");
     QNetworkRequest request(url);
     manager->get(request);
 }
 
-void MainWindow::onUpdateCheckFinished(QNetworkReply* reply) {
+void MainWindow::onUpdateCheckFinished(QNetworkReply* reply, bool fromAction) {
     if (reply->error() == QNetworkReply::NoError) {
         QByteArray response = reply->readAll();
         QJsonDocument jsonDoc = QJsonDocument::fromJson(response);
@@ -45,6 +47,13 @@ void MainWindow::onUpdateCheckFinished(QNetworkReply* reply) {
                     config["skipVersion"] = latestVersion;
 
                     configManager.saveConfig(config);
+                }
+            }
+            else {
+                if (fromAction) {
+                    QMessageBox::information(this,
+                        "Update Check",
+                        "Your software is up to date.");
                 }
             }
         }

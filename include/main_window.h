@@ -20,12 +20,12 @@ public slots:
     void handleHotkeyActivated(size_t id);
     void handleScreenshotClosed();
     void reloadHotkeys();
-    void onUpdateCheckFinished(QNetworkReply* reply);
+    void onUpdateCheckFinished(QNetworkReply* reply, bool fromAction);
     void downloadUpdate(const QString& downloadUrl);
     void onDownloadFinished(QNetworkReply* reply);
 
 public:
-    void checkForUpdates();
+    void checkForUpdates(bool fromAction);
 
 signals:
     void screenshotClosed();

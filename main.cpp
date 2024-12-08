@@ -79,7 +79,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
     }
 
     MainWindow w(&configManager);
-    w.checkForUpdates();
+    w.checkForUpdates(false);
 
     QAction loginAction("Login to ScreenMe", &trayMenu);
     QAction takeScreenshotAction("Take Screenshot", &trayMenu);
@@ -193,7 +193,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
         config["skipVersion"] = "";
 
         configManager.saveConfig(config);
-        w.checkForUpdates();
+        w.checkForUpdates(true);
     });
 
     trayIcon.show();
