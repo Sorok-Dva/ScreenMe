@@ -33,6 +33,7 @@ signals:
     void saveRequested();
     void copyRequested();
     void publishRequested();
+    void searchRequested();
     void closeRequested();
 
 public slots:

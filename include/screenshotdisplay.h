@@ -46,7 +46,7 @@ protected:
 private slots:
     void onToolSelected(Editor::Tool tool);
     void onSaveRequested();
-    void onPublishRequested();
+    void onPublishRequested(bool searchImage);
     void onCloseRequested();
     void copySelectionToClipboard();
     void undo();

@@ -12,5 +12,6 @@
         <file>resources/icons/upload.png</file>
         <file>resources/icon.png</file>
         <file>resources/app.ico</file>
+        <file>resources/icons/search.png</file>
     </qresource>
 </RCC>
