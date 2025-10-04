@@ -17,7 +17,7 @@
 class ScreenshotDisplay : public QWidget {
     Q_OBJECT
 public:
-    explicit ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent = nullptr, ConfigManager* configManager = nullptr);
+    explicit ScreenshotDisplay(const QPixmap& pixmap, const QRect& desktopGeometry, QWidget* parent = nullptr, ConfigManager* configManager = nullptr);
 
     enum HandlePosition {
         None,
@@ -48,6 +48,7 @@ private slots:
     void onSaveRequested();
     void onPublishRequested(bool searchImage);
     void onCloseRequested();
+    void onPrintRequested();
     void copySelectionToClipboard();
     void undo();
 
@@ -65,6 +66,7 @@ private:
     HandlePosition handleAtPoint(const QPoint& point);
     void resizeSelection(const QPoint& point);
     Qt::CursorShape cursorForHandle(HandlePosition handle);
+    QRect toPixmapRect(const QRect& rect) const;
 
     std::stack<QPixmap> undoStack;
     QPixmap originalPixmap;
@@ -80,6 +82,7 @@ private:
     QPoint textEditPosition;
     QRect textBoundingRect;
     QPoint endPoint;
+    QRect desktopGeometry;
 
     bool selectionStarted;
     bool movingSelection;
@@ -88,6 +91,7 @@ private:
     bool showBorderCircle;
 
     int borderWidth;
+    qreal pixmapDeviceRatio;
 
     QVBoxLayout* actionLayout;
 

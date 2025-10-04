@@ -20,33 +20,51 @@
 #include <QCursor>
 #include <QCheckBox>
 #include <QWheelEvent>
+#include <QPrinter>
+#include <QPrintDialog>
+#include <cmath>
+#include <algorithm>
 
-ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, QWidget* parent, ConfigManager* configManager)
-    : QWidget(parent), originalPixmap(pixmap), selectionStarted(false), movingSelection(false), currentHandle(None), configManager(configManager),
-    drawing(false), shapeDrawing(false), currentColor(Qt::black), currentTool(Editor::None), borderWidth(5),
-    drawingPixmap(pixmap.size()), currentFont("Arial", 16), text("Editable Text"), textEdit(nullptr) {
+ScreenshotDisplay::ScreenshotDisplay(const QPixmap& pixmap, const QRect& geometry, QWidget* parent, ConfigManager* configManager)
+    : QWidget(parent),
+    originalPixmap(pixmap),
+    drawingPixmap(pixmap.size()),
+    selectionRect(),
+    currentShapeRect(),
+    currentHandle(None),
+    selectionStarted(false),
+    movingSelection(false),
+    drawing(false),
+    shapeDrawing(false),
+    showBorderCircle(false),
+    borderWidth(5),
+    pixmapDeviceRatio(qFuzzyIsNull(pixmap.devicePixelRatio()) ? 1.0 : pixmap.devicePixelRatio()),
+    currentColor(Qt::black),
+    currentTool(Editor::None),
+    currentFont("Arial", 16),
+    text("Editable Text"),
+    textEdit(nullptr),
+    editor(nullptr),
+    configManager(configManager) {
+
+    originalPixmap.setDevicePixelRatio(1.0);
+    drawingPixmap.setDevicePixelRatio(1.0);
+    pixmapDeviceRatio = 1.0;
+
+    desktopGeometry = geometry.isValid() ? geometry : QRect(QPoint(0, 0), originalPixmap.size());
 
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setWindowTitle("ScreenMe");
     setWindowIcon(QIcon("resources/icon.png"));
     setAttribute(Qt::WA_QuitOnClose, false);
+    setGeometry(desktopGeometry);
 
-    QRect totalGeometry;
-    const auto screens = QGuiApplication::screens();
-    for (QScreen* scr : screens) {
-        totalGeometry = totalGeometry.united(scr->geometry());
-    }
-
-    if (totalGeometry.x() < 0 || totalGeometry.y() < 0) {
-        totalGeometry.translate(-totalGeometry.x(), -totalGeometry.y());
-    }
-
-    setGeometry(totalGeometry);
+    drawingPixmap.setDevicePixelRatio(pixmapDeviceRatio);
+    drawingPixmap.fill(Qt::transparent);
 
     initializeEditor();
     configureShortcuts();
 
-    drawingPixmap.fill(Qt::transparent);
     QFontMetrics fm(currentFont);
     textBoundingRect = QRect(QPoint(100, 100), fm.size(0, text));
     show();
@@ -67,6 +85,7 @@ void ScreenshotDisplay::initializeEditor() {
     connect(editor.get(), &Editor::publishRequested, this, [this]() {
         onPublishRequested(false);
     });
+    connect(editor.get(), &Editor::printRequested, this, &ScreenshotDisplay::onPrintRequested);
     connect(editor.get(), &Editor::searchRequested, this, [this]() {
         onPublishRequested(true);
         });
@@ -170,8 +189,8 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
     }
     if (selectionStarted) {
         QRect newRect = QRect(origin, event->pos()).normalized();
-        QRect screenRect = QApplication::primaryScreen()->geometry();
-        selectionRect = newRect.intersected(screenRect);
+        QRect bounds(QPoint(0, 0), size());
+        selectionRect = newRect.intersected(bounds);
         update();
         updateTooltip();
         updateEditorPosition();
@@ -192,15 +211,11 @@ void ScreenshotDisplay::mouseMoveEvent(QMouseEvent* event) {
     }
     else if (movingSelection) {
         QPoint topLeft = event->pos() - selectionOffset;
-        QRect screenRect = QApplication::primaryScreen()->geometry();
-        if (topLeft.x() < 0) topLeft.setX(0);
-        if (topLeft.y() < 0) topLeft.setY(0);
-        if (topLeft.x() + selectionRect.width() > screenRect.width()) {
-            topLeft.setX(screenRect.width() - selectionRect.width());
-        }
-        if (topLeft.y() + selectionRect.height() > screenRect.height()) {
-            topLeft.setY(screenRect.height() - selectionRect.height());
-        }
+        QRect bounds(QPoint(0, 0), size());
+        const int maxX = std::max(bounds.left(), bounds.width() - selectionRect.width());
+        const int maxY = std::max(bounds.top(), bounds.height() - selectionRect.height());
+        topLeft.setX(std::clamp(topLeft.x(), bounds.left(), maxX));
+        topLeft.setY(std::clamp(topLeft.y(), bounds.top(), maxY));
         selectionRect.moveTopLeft(topLeft);
         update();
         updateTooltip();
@@ -222,10 +237,8 @@ void ScreenshotDisplay::mouseReleaseEvent(QMouseEvent* event) {
     movingSelection = false;
     currentHandle = None;
     drawing = false;
-    endPoint = event->pos();
-    qreal ratio = QApplication::primaryScreen()->devicePixelRatio();
-    endPoint.setX(endPoint.x() * ratio);
-    endPoint.setY(endPoint.y() * ratio);
+    endPoint = QPoint(std::lround(event->pos().x() * pixmapDeviceRatio),
+                         std::lround(event->pos().y() * pixmapDeviceRatio));
 
     if (shapeDrawing) {
         saveStateForUndo();
@@ -299,34 +312,33 @@ void ScreenshotDisplay::wheelEvent(QWheelEvent* event) {
 void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event);
     QPainter painter(this);
-    QScreen *screen = this->screen();
-    qreal dpr = screen->devicePixelRatio();
+    painter.setRenderHint(QPainter::Antialiasing);
 
-    QPixmap scaledOriginalPixmap = originalPixmap.scaled(size() * dpr, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    QPixmap scaledDrawingPixmap = drawingPixmap.scaled(size() * dpr, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    const QSize targetSize(originalPixmap.width() / pixmapDeviceRatio, originalPixmap.height() / pixmapDeviceRatio);
+    const QRect targetRect(QPoint(0, 0), targetSize);
 
-    QPixmap transparentPixmap(scaledOriginalPixmap.size());
-    transparentPixmap.fill(Qt::transparent);
-    
-    QPainter transparentPainter(&transparentPixmap);
-    transparentPainter.setOpacity(0.6);
-    transparentPainter.drawPixmap(0, 0, scaledOriginalPixmap);
-    transparentPainter.drawPixmap(0, 0, scaledDrawingPixmap);
+    painter.drawPixmap(targetRect, originalPixmap);
+    painter.drawPixmap(targetRect, drawingPixmap);
 
-    painter.drawPixmap(0, 0, transparentPixmap);
+    QPainterPath shadePath;
+    shadePath.addRect(rect());
+    if (selectionRect.isValid()) {
+        QPainterPath selectionPath;
+        selectionPath.addRect(selectionRect);
+        shadePath = shadePath.subtracted(selectionPath);
+    }
+
+    painter.save();
+    painter.setPen(Qt::NoPen);
+    painter.fillPath(shadePath, QColor(0, 0, 0, 140));
+    painter.restore();
 
     if (selectionRect.isValid()) {
-        QRect scaledSelectionRect = QRect(selectionRect.topLeft() * dpr, selectionRect.size() * dpr);
-        QPixmap selectedPixmap = scaledOriginalPixmap.copy(scaledSelectionRect);
-        painter.drawPixmap(selectionRect.topLeft(), selectedPixmap);
-
-        QPixmap selectedDrawingPixmap = scaledDrawingPixmap.copy(scaledSelectionRect);
-        painter.drawPixmap(selectionRect.topLeft(), selectedDrawingPixmap);
-
         painter.setPen(QPen(Qt::red, 2, Qt::DashLine));
         painter.drawRect(selectionRect);
         drawHandles(painter);
     }
+
     if (shapeDrawing) {
         painter.setPen(QPen(editor->getCurrentColor(), borderWidth, Qt::SolidLine));
         switch (editor->getCurrentTool()) {
@@ -358,9 +370,8 @@ void ScreenshotDisplay::paintEvent(QPaintEvent* event) {
     }
 
     if (editor->getCurrentTool() != Editor::None) {
-        drawBorderCircle(painter, mapFromGlobal(QCursor::pos()));
-        painter.setBrush(Qt::transparent);
-        painter.drawEllipse(cursorPosition, borderWidth / 2, borderWidth / 2);
+        cursorPosition = mapFromGlobal(QCursor::pos());
+        drawBorderCircle(painter, cursorPosition);
     }
 }
 
@@ -379,12 +390,10 @@ void ScreenshotDisplay::onSaveRequested() {
     }
 
     QString filePath = QFileDialog::getSaveFileName(this, "Save As", defaultFileName, fileFilter);
-    QScreen* screen = this->screen();
-    qreal dpr = screen->devicePixelRatio();
-    QRect scaledSelectionRect = QRect(selectionRect.topLeft() * dpr, selectionRect.size() * dpr);
+    QRect captureRect = selectionRect.isValid() ? toPixmapRect(selectionRect) : originalPixmap.rect();
 
     if (!filePath.isEmpty()) {
-        QPixmap selectedPixmap = originalPixmap.copy(scaledSelectionRect);
+        QPixmap selectedPixmap = originalPixmap.copy(captureRect);
         selectedPixmap.save(filePath);
         close();
     }
@@ -400,9 +409,7 @@ void ScreenshotDisplay::onPublishRequested(bool searchImage) {
 
     editor->hide();
 
-    QScreen* screen = this->screen();
-    qreal dpr = screen->devicePixelRatio();
-    QRect scaledSelectionRect = QRect(selectionRect.topLeft() * dpr, selectionRect.size() * dpr);
+    QRect captureRect = selectionRect.isValid() ? toPixmapRect(selectionRect) : originalPixmap.rect();
 
     QJsonObject config = configManager->loadConfig();
     QString defaultSaveFolder = config["default_save_folder"].toString();
@@ -410,7 +417,7 @@ void ScreenshotDisplay::onPublishRequested(bool searchImage) {
 
     if (selectionRect.isValid()) {
         ScreenshotDisplay::hide();
-        QPixmap selectedPixmap = resultPixmap.copy(scaledSelectionRect);
+        QPixmap selectedPixmap = resultPixmap.copy(captureRect);
         QApplication::clipboard()->setPixmap(selectedPixmap);
 
         QString tempFilePath = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/screenshot.png";
@@ -452,7 +459,7 @@ void ScreenshotDisplay::onPublishRequested(bool searchImage) {
         progressDialog->show();
 
         // Position the progress dialog at the bottom right of the screen
-        QRect screenGeometry = QApplication::primaryScreen()->geometry();
+        QRect screenGeometry = desktopGeometry;
         QSize progressDialogSize = progressDialog->sizeHint();
         progressDialog->move(screenGeometry.bottomRight() - QPoint(progressDialogSize.width() + 10, progressDialogSize.height() + 100));
 
@@ -561,18 +568,50 @@ void ScreenshotDisplay::onCloseRequested() {
     close();
 }
 
+void ScreenshotDisplay::onPrintRequested() {
+    if (textEdit) {
+        finalizeTextEdit();
+    }
+
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setDocName(tr("ScreenMe Capture"));
+
+    QPrintDialog dialog(&printer, this);
+    dialog.setWindowTitle(tr("Print Screenshot"));
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    QPixmap resultPixmap = originalPixmap;
+    QPainter painter(&resultPixmap);
+    painter.drawPixmap(0, 0, drawingPixmap);
+
+    const QRect captureRect = selectionRect.isValid() ? toPixmapRect(selectionRect) : resultPixmap.rect();
+    QPixmap printPixmap = resultPixmap.copy(captureRect);
+
+    if (printPixmap.isNull()) {
+        return;
+    }
+
+    QPainter printPainter(&printer);
+    printPainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+    const QRectF pageRect = printer.pageRect(QPrinter::DevicePixel);
+    QPixmap scaled = printPixmap.scaled(pageRect.size().toSize(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    const qreal offsetX = (pageRect.width() - scaled.width()) / 2.0;
+    const qreal offsetY = (pageRect.height() - scaled.height()) / 2.0;
+    printPainter.drawPixmap(QPointF(pageRect.left() + offsetX, pageRect.top() + offsetY), scaled);
+    printPainter.end();
+}
+
 void ScreenshotDisplay::copySelectionToClipboard() {
     QPixmap resultPixmap = originalPixmap;
     QPainter painter(&resultPixmap);
     painter.drawPixmap(0, 0, drawingPixmap);
 
-    QScreen* screen = this->screen();
-    qreal dpr = screen->devicePixelRatio();
-    QRect scaledSelectionRect = QRect(selectionRect.topLeft() * dpr, selectionRect.size() * dpr);
-
     if (selectionRect.isValid()) {
-        QPixmap selectedPixmap = resultPixmap.copy(scaledSelectionRect);
-        QApplication::clipboard()->setPixmap(selectedPixmap);
+        const QRect captureRect = toPixmapRect(selectionRect);
+        QApplication::clipboard()->setPixmap(resultPixmap.copy(captureRect));
     }
     else {
         QApplication::clipboard()->setPixmap(resultPixmap);
@@ -621,7 +660,7 @@ ScreenshotDisplay::HandlePosition ScreenshotDisplay::handleAtPoint(const QPoint&
 }
 
 void ScreenshotDisplay::resizeSelection(const QPoint& point) {
-    QRect screenRect = QApplication::primaryScreen()->geometry();
+    QRect bounds(QPoint(0, 0), size());
     QRect newRect = selectionRect;
 
     switch (currentHandle) {
@@ -653,7 +692,7 @@ void ScreenshotDisplay::resizeSelection(const QPoint& point) {
         break;
     }
 
-    newRect = newRect.normalized().intersected(screenRect);
+    newRect = newRect.normalized().intersected(bounds);
 
     selectionRect = newRect;
 }
@@ -685,18 +724,29 @@ void ScreenshotDisplay::onToolSelected(Editor::Tool tool) {
 void ScreenshotDisplay::updateEditorPosition() {
     if (selectionRect.isValid()) {
         const int margin = 10;
-        QPoint editorPos = selectionRect.topRight() + QPoint(margin, margin);
-
-        QRect screenRect = QApplication::primaryScreen()->geometry();
         QSize editorSize = editor->sizeHint();
 
-        if (editorPos.x() + editorSize.width() > screenRect.width()) {
-            editorPos.setX(screenRect.width() - editorSize.width() - margin);
+        const QPoint globalTopRight = mapToGlobal(selectionRect.topRight());
+        const QPoint globalTopLeft = mapToGlobal(selectionRect.topLeft());
+        const QPoint globalCenter = mapToGlobal(selectionRect.center());
+        const QRect globalBounds = geometry();
+
+        int desiredX = globalTopRight.x() + margin;
+        if (desiredX + editorSize.width() > globalBounds.right() - margin) {
+            desiredX = globalTopLeft.x() - editorSize.width() - margin;
         }
-        if (editorPos.y() + editorSize.height() > screenRect.height()) {
-            editorPos.setY(screenRect.height() - editorSize.height() - margin);
-        }
-        editor->move(editorPos);
+
+        int desiredY = globalCenter.y() - (editorSize.height() / 2);
+
+        const int minX = globalBounds.left() + margin;
+        const int maxX = std::max(minX, globalBounds.right() - editorSize.width() - margin);
+        const int minY = globalBounds.top() + margin;
+        const int maxY = std::max(minY, globalBounds.bottom() - editorSize.height() - margin);
+
+        desiredX = std::clamp(desiredX, minX, maxX);
+        desiredY = std::clamp(desiredY, minY, maxY);
+
+        editor->move(desiredX, desiredY);
     }
 }
 
@@ -724,6 +774,19 @@ void ScreenshotDisplay::drawBorderCircle(QPainter& painter, const QPoint& positi
     painter.setPen(QPen(editor->getCurrentColor(), 2, Qt::SolidLine));
     painter.setBrush(Qt::NoBrush);
     painter.drawEllipse(position, borderWidth, borderWidth);
+}
+
+QRect ScreenshotDisplay::toPixmapRect(const QRect& rect) const {
+    if (!rect.isValid()) {
+        return QRect();
+    }
+
+    const qreal scale = pixmapDeviceRatio <= 0.0 ? 1.0 : pixmapDeviceRatio;
+    const QPointF topLeft = rect.topLeft();
+    const QSizeF size = rect.size();
+    const QPoint scaledTopLeft(std::lround(topLeft.x() * scale), std::lround(topLeft.y() * scale));
+    const QSize scaledSize(std::lround(size.width() * scale), std::lround(size.height() * scale));
+    return QRect(scaledTopLeft, scaledSize);
 }
 
 void ScreenshotDisplay::adjustTextEditSize() {

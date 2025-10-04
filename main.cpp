@@ -1,6 +1,8 @@
-﻿#include <Windows.h>
+﻿#ifdef Q_OS_WIN
+#include <Windows.h>
+#endif
 #include <iostream>
-#include <QMainWindow>
+#include <QDebug>
 #include <QApplication>
 #include <QSystemTrayIcon>
 #include <QDesktopServices>
@@ -10,54 +12,45 @@
 #include <QTextStream>
 #include <QMessageBox>
 #include <QSharedMemory>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QVariant>
+#include <QDir>
+#include <memory>
 #include "include/options_window.h"
 #include "include/config_manager.h"
 #include "include/login_loader.h"
 #include "include/login_server.h"
 #include "include/main_window.h"
 #include "include/utils.h"
+#include "include/credits_dialog.h"
+#include "include/simpletranslator.h"
+#ifdef Q_OS_WIN
 #include "include/hotkeyEventFilter.h"
-#include "include/globalKeyboardHook.h"
+#endif
 
-
-using namespace std;
 
 #define SHARED_MEM_KEY "ScreenMeSharedMemory"
 
 static void showAboutDialog() {
-    QMessageBox aboutBox;
-    aboutBox.setWindowTitle("About ScreenMe");
-    aboutBox.setWindowIcon(QIcon(":/resources/icon.png"));
-    aboutBox.setTextFormat(Qt::RichText);
-    aboutBox.setAttribute(Qt::WA_QuitOnClose, false);
-    aboutBox.setText(
-        "<h1>ScreenMe<h1>"
-        "Version <b>" + VERSION + "</b><br><br>"
-        "<span style=\"color: green\">Contribute on GitHub ! </span> : <a href=\"https://github.com/Sorok-Dva/ScreenMe\">Github Repository</a><br><br>"
-    );
-    aboutBox.setInformativeText(
-        "Terms of use of ScreenMe : <a href=\"" + SCREEN_ME_HOST + "/terms-of-use\">" + SCREEN_ME_HOST + "/terms-of-use</a><br><br>"
-        "© 2024 Developed by <a href=\"https://github.com/Sorok-Dva\">Сорок два</a>. <b>All rights reserved.</b>"
-    );
-    aboutBox.setIconPixmap(QPixmap(":/resources/icon.png"));
-    aboutBox.exec();
+    CreditsDialog dialog;
+    dialog.exec();
 }
 
-int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
+int main(int argc, char* argv[])
 {
-    int argc = 0;
-    QApplication app(argc, 0);
-    #ifdef _WIN32
-        // Ensure the console window does not appear on Windows
-        FreeConsole();
-    #endif
+    QApplication app(argc, argv);
+    QApplication::setQuitOnLastWindowClosed(false);
 
-    app.setWindowIcon(QIcon(":/resources/app.ico"));
+    // If built as a console app on Windows we can detach from the console.
+
+    app.setWindowIcon(QIcon(":/resources/icon.png"));
 
     QSharedMemory sharedMemory(SHARED_MEM_KEY);
     if (!sharedMemory.create(1)) {
-        QMessageBox::warning(nullptr, "ScreenMe is already running",
-        "An instance of this application is already running. Please quit existing ScreenMe process first.");
+        QMessageBox::warning(nullptr,
+                              QObject::tr("ScreenMe is already running"),
+                              QObject::tr("An instance of this application is already running. Please quit the existing ScreenMe process first."));
         return 1;
     }
 
@@ -66,33 +59,49 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
     QJsonObject loginInfo = jsonDoc.object();
 
     ConfigManager configManager("config.json");
+    QJsonObject config = configManager.loadConfig();
+
+    const QString language = config["language"].toString(QStringLiteral("en"));
+    std::unique_ptr<SimpleTranslator> translator;
+    if (!language.isEmpty() && language.toLower() != QStringLiteral("en")) {
+        auto simple = std::make_unique<SimpleTranslator>();
+        if (simple->loadLanguage(language)) {
+            translator = std::move(simple);
+            app.installTranslator(translator.get());
+        } else {
+            qWarning() << "Unable to load translation for" << language;
+        }
+    }
+
     QSystemTrayIcon trayIcon(QIcon(":/resources/icon.png"));
     QMenu trayMenu;
 
-    QJsonObject config = configManager.loadConfig();
-    QVariant startWithSystemVar = config["start_with_system"].toBool();
+#ifdef Q_OS_WIN
+    const QVariant startWithSystemVar = config["start_with_system"].toBool();
     if (startWithSystemVar.isValid() && startWithSystemVar.toBool()) {
         setAutoStart(true);
     }
     else {
         setAutoStart(false);
     }
+#endif
 
-    MainWindow w(&configManager);
-    w.checkForUpdates(false);
+    MainWindow mainWindow(&configManager);
+    mainWindow.checkForUpdates(false);
+    mainWindow.hide();
 
-    QAction loginAction("Login to ScreenMe", &trayMenu);
-    QAction takeScreenshotAction("Take Screenshot", &trayMenu);
-    QAction takeFullscreenScreenshotAction("Take Fullscreen Screenshot", &trayMenu);
-    QAction aboutAction("About...", &trayMenu);
-    QAction helpAction("❓Help", &trayMenu);
-    QAction reportBugAction("🛠️ Report a bug", &trayMenu);
-    QAction optionsAction("Options", &trayMenu);
-    QAction checkUpdateAction("Check for update", &trayMenu);
-    QAction exitAction("Exit", &trayMenu);
+    QAction loginAction(QObject::tr("Login to ScreenMe"), &trayMenu);
+    QAction takeScreenshotAction(QObject::tr("Take Screenshot"), &trayMenu);
+    QAction takeFullscreenScreenshotAction(QObject::tr("Take Fullscreen Screenshot"), &trayMenu);
+    QAction aboutAction(QObject::tr("Credits"), &trayMenu);
+    QAction helpAction(QObject::tr("❓Help"), &trayMenu);
+    QAction reportBugAction(QObject::tr("🛠️ Report a bug"), &trayMenu);
+    QAction optionsAction(QObject::tr("Options"), &trayMenu);
+    QAction checkUpdateAction(QObject::tr("Check for update"), &trayMenu);
+    QAction exitAction(QObject::tr("Exit"), &trayMenu);
 
-    QAction myGalleryAction("My Gallery", &trayMenu);
-    QAction logoutAction("Logout", &trayMenu);
+    QAction myGalleryAction(QObject::tr("My Gallery"), &trayMenu);
+    QAction logoutAction(QObject::tr("Logout"), &trayMenu);
 
     if (loginInfo.isEmpty()) {
         trayMenu.addAction(&loginAction);
@@ -103,7 +112,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
         trayMenu.addAction(&myGalleryAction);
         trayMenu.addAction(&logoutAction);
         trayMenu.addSeparator();
-        myGalleryAction.setText("My Gallery (" + nickname + ")");
+        myGalleryAction.setText(QObject::tr("My Gallery (%1)").arg(nickname));
     }
 
     trayMenu.addAction(&takeScreenshotAction);
@@ -117,7 +126,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
     trayMenu.addAction(&checkUpdateAction);
     trayMenu.addAction(&exitAction);
     trayIcon.setContextMenu(&trayMenu);
-    trayIcon.setToolTip("Press the configured key combination to take a screenshot");
+    trayIcon.setToolTip(QObject::tr("Press the configured key combination to take a screenshot"));
 
     LoginServer loginServer;
     LoginLoader loginLoader;
@@ -131,21 +140,21 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
     QObject::connect(&loginServer, &LoginServer::userLoggedIn, [&](const QString& id, const QString& email, const QString& nickname, const QString& token) {
         saveLoginInfo(id, email, nickname, token);
 
-        trayIcon.showMessage("Login Successful", "Connected as " + nickname, QSystemTrayIcon::Information, 3000);
+        trayIcon.showMessage(QObject::tr("Login Successful"),
+                             QObject::tr("Connected as %1").arg(nickname),
+                             QSystemTrayIcon::Information,
+                             3000);
 
         trayMenu.removeAction(&loginAction);
         trayMenu.insertAction(&takeScreenshotAction, &myGalleryAction);
         trayMenu.insertAction(&takeScreenshotAction, &logoutAction);
         trayMenu.insertSeparator(&logoutAction);
-        myGalleryAction.setText("My Gallery (" + nickname + ")");
+        myGalleryAction.setText(QObject::tr("My Gallery (%1)").arg(nickname));
     });
 
     QObject::connect(&myGalleryAction, &QAction::triggered, [&]() {
         QString jsonStr = loadLoginInfo();
         if (!jsonStr.isEmpty()) {
-            QJsonDocument jsonDoc = QJsonDocument::fromJson(jsonStr.toUtf8());
-            QJsonObject loginInfo = jsonDoc.object();
-            QString nickname = loginInfo["nickname"].toString();
             QDesktopServices::openUrl(QUrl(SCREEN_ME_HOST + "/gallery"));
         }
     });
@@ -160,15 +169,19 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
 
     QObject::connect(&exitAction, &QAction::triggered, &app, &QApplication::quit);
 
-    MainWindow mainWindow(&configManager);
-    mainWindow.hide();
-
     QObject::connect(&takeScreenshotAction, &QAction::triggered, [&]() {
         mainWindow.takeScreenshot();
     });
 
     QObject::connect(&takeFullscreenScreenshotAction, &QAction::triggered, [&]() {
         mainWindow.takeFullscreenScreenshot();
+    });
+
+    QObject::connect(&mainWindow, &MainWindow::fullscreenSaved, [&](const QString& path) {
+        trayIcon.showMessage(QObject::tr("Screenshot saved"),
+                             QObject::tr("Fullscreen capture stored at %1").arg(QDir::toNativeSeparators(path)),
+                             QSystemTrayIcon::Information,
+                             3000);
     });
 
     QObject::connect(&aboutAction, &QAction::triggered, [&]() {
@@ -190,10 +203,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
     });
 
     QObject::connect(&checkUpdateAction, &QAction::triggered, [&]() {
-        config["skipVersion"] = "";
-
-        configManager.saveConfig(config);
-        w.checkForUpdates(true);
+        QJsonObject mutableConfig = configManager.loadConfig();
+        mutableConfig["skipVersion"] = "";
+        configManager.saveConfig(mutableConfig);
+        mainWindow.checkForUpdates(true);
     });
 
     trayIcon.show();
@@ -208,6 +221,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
         mainWindow.handleScreenshotClosed();
     });
 
+#ifdef Q_OS_WIN
     HotkeyEventFilter hotkeyEventFilter(&mainWindow);
     app.installNativeEventFilter(&hotkeyEventFilter);
 
@@ -215,6 +229,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char*, int nShowCmd)
         mainWindow.handleHotkeyActivated(id);
         std::cout << "Global hotkey pressed!" << std::endl;
     });
+#endif
 
     return app.exec();
 }

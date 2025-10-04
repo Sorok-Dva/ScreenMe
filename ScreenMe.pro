@@ -1,6 +1,8 @@
-QT = core gui widgets
+QT += core gui widgets network websockets printsupport
 
-CONFIG += windows
+win32 {
+    CONFIG += windows
+}
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -18,7 +20,9 @@ HEADERS += \
     include/uglobal.h \
     include/uglobalhotkeys.h \
     include/ukeysequence.h \
-    include/screenshotdisplay.h
+    include/screenshotdisplay.h \
+    include/credits_dialog.h \
+    include/simpletranslator.h
 
 SOURCES += \
         main.cpp \
@@ -32,12 +36,15 @@ SOURCES += \
         src/login_server.cpp \
         src/uexception.cpp \
         src/uglobalhotkeys.cpp \
-        src/ukeysequence.cpp 
+        src/ukeysequence.cpp \
+        src/credits_dialog.cpp \
+        src/simpletranslator.cpp
 
-TRANSLATIONS += \
-    ScreenMe_fr_FR.ts
-CONFIG += lrelease
-CONFIG += embed_translations
+RESOURCES += \
+    icons.qrc
+
+macx:CONFIG += app_bundle
+macx:LIBS += -framework Carbon -framework ApplicationServices
 
 
 # Default rules for deployment.
@@ -50,6 +57,3 @@ DISTFILES += \
     .gitignore \
     LICENSE.txt \
     README.md
-
-
-

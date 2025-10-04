@@ -7,8 +7,9 @@
 message("You are running qmake on a generated .pro file. This may not work!")
 
 
-QT       += core gui widgets
+QT       += core gui widgets printsupport
 QT += websockets
+QT -= axserver axcontainer
 
 HEADERS += ./include/config_manager.h \
     ./include/hotkeymap.h \
@@ -25,7 +26,9 @@ HEADERS += ./include/config_manager.h \
     ./include/login_loader.h \
     ./include/login_server.h \
     ./include/uglobalhotkeys.h \
-    ./include/options_window.h
+    ./include/options_window.h \
+    ./include/credits_dialog.h \
+    ./include/simpletranslator.h
 SOURCES += ./src/customTextInput.cpp \
     ./src/editor.cpp \
     ./src/globalKeyboardHook.cpp \
@@ -40,4 +43,6 @@ SOURCES += ./src/customTextInput.cpp \
     ./src/utils.cpp \
     ./main.cpp \
     ./src/config_manager.cpp \
-    ./src/options_window.cpp
+    ./src/options_window.cpp \
+    ./src/credits_dialog.cpp \
+    ./src/simpletranslator.cpp

@@ -17,6 +17,7 @@ ConfigManager::ConfigManager(const QString& configPath) : configPath(configPath)
         defaultConfig["default_save_folder"] = QDir::homePath() + "/Pictures/ScreenMe";
         defaultConfig["start_with_system"] = true;
         defaultConfig["skipVersion"] = "";
+        defaultConfig["language"] = "en";
         saveConfig(defaultConfig);
     }
 }

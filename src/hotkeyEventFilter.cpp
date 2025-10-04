@@ -1,4 +1,6 @@
 #include "../include/hotkeyEventFilter.h"
+
+#ifdef Q_OS_WIN
 #include <Windows.h>
 
 HotkeyEventFilter::HotkeyEventFilter(QMainWindow* mainWindow)
@@ -17,3 +19,4 @@ bool HotkeyEventFilter::nativeEventFilter(const QByteArray& eventType, void* mes
 
     return false;
 }
+#endif // Q_OS_WIN

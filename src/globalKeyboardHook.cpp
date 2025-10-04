@@ -1,5 +1,8 @@
 #include "../include/globalKeyboardHook.h"
+
+#ifdef Q_OS_WIN
 #include <QDebug>
+
 HHOOK GlobalKeyboardHook::hHook = nullptr;
 GlobalKeyboardHook* GlobalKeyboardHook::instance = nullptr;
 
@@ -64,3 +67,4 @@ LRESULT CALLBACK GlobalKeyboardHook::LowLevelKeyboardProc(int nCode, WPARAM wPar
     }
     return CallNextHookEx(hHook, nCode, wParam, lParam);
 }
+#endif // Q_OS_WIN

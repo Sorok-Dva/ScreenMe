@@ -7,7 +7,7 @@
 #include <QSpinBox>
 #include <QCheckBox>
 #include <QKeyEvent>
-#include <QSet>
+#include <QKeySequence>
 #include "config_manager.h"
 
 class OptionsWindow : public QDialog {
@@ -21,8 +21,6 @@ signals:
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
-    void keyPressEvent(QKeyEvent* event) override;
-    void keyReleaseEvent(QKeyEvent* event) override;
 
 private slots:
     void loadOptions();
@@ -33,8 +31,6 @@ private slots:
     void handleGlobalKeyPress(QKeySequence keySequence);
 
 private:
-    void recordKey(QKeyEvent* event);
-
     ConfigManager* configManager;
     QLineEdit* hotkeyEdit;
     QLineEdit* fullscreenHotkeyEdit;
@@ -43,8 +39,7 @@ private:
     QSpinBox* qualitySpinbox;
     QLineEdit* folderEdit;
     QCheckBox* startWithSystemCheckbox;
-    QString currentKeys;
-    QSet<int> pressedKeys;
+    QComboBox* languageCombo;
 };
 
 #endif // OPTIONS_WINDOW_H

@@ -35,6 +35,7 @@ signals:
     void publishRequested();
     void searchRequested();
     void closeRequested();
+    void printRequested();
 
 public slots:
     void deselectTools();
@@ -44,9 +45,11 @@ public slots:
 private:
     void createToolButton(const QString& toolName, Tool tool, const QIcon& icon);
     void createActionButton(const QString& tooltip, const QIcon& icon, const QString& signal);
+    void updateColorSwatch();
 
-    QVBoxLayout* layout;
-    QHBoxLayout* actionLayout;
+    QVBoxLayout* mainLayout;
+    QVBoxLayout* toolLayout;
+    QVBoxLayout* actionLayout;
     QPushButton* colorButton;
     QList<QPushButton*> toolButtons;
     Tool currentTool;

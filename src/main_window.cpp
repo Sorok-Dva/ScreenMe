@@ -5,6 +5,7 @@
 #include <QPixmap>
 #include <QJsonObject>
 #include <QDebug>
+#include <QStandardPaths>
 #include "../include/options_window.h"
 #include "../include/screenshotdisplay.h"
 #include "../include/uglobalhotkeys.h"
@@ -49,34 +50,45 @@ void MainWindow::reloadHotkeys() {
 }
 
 void MainWindow::takeScreenshot() {
-    qDebug() << "takeScreenshot";
     if (isScreenshotDisplayed) return;
 
-    QScreen* screen = QGuiApplication::primaryScreen();
-    if (!screen) {
-        qDebug() << "No primary screen found";
+    DesktopCapture capture = captureEntireDesktop();
+    if (!capture.isValid()) {
+        qWarning() << tr("Unable to capture desktop");
         return;
     }
-    QPixmap originalPixmap = screen->grabWindow(0);
-    screenshotDisplay = new ScreenshotDisplay(originalPixmap, nullptr, configManager);
+
+    screenshotDisplay = new ScreenshotDisplay(capture.pixmap, capture.geometry, nullptr, configManager);
     connect(screenshotDisplay, &ScreenshotDisplay::screenshotClosed, this, &MainWindow::handleScreenshotClosed);
     screenshotDisplay->show();
     isScreenshotDisplayed = true;
 }
 
 void MainWindow::takeFullscreenScreenshot() {
-    qDebug() << "takeFullscreenScreenshot";
     if (isScreenshotDisplayed) return;
 
-    QScreen* screen = QGuiApplication::primaryScreen();
-    if (!screen) {
-        qDebug() << "No primary screen found";
+    DesktopCapture capture = captureEntireDesktop();
+    if (!capture.isValid()) {
+        qWarning() << tr("Unable to capture desktop");
         return;
     }
-    QPixmap originalPixmap = screen->grabWindow(0);
     QJsonObject config = configManager->loadConfig();
-    QString savePath = getUniqueFilePath(config["default_save_folder"].toString(), "fullscreen_screenshot", config["file_extension"].toString());
-    originalPixmap.save(savePath);
+    QString folder = config["default_save_folder"].toString();
+    if (folder.isEmpty()) {
+        folder = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
+    }
+    QString extension = config["file_extension"].toString();
+    if (extension.isEmpty()) {
+        extension = QStringLiteral("png");
+    }
+
+    QString savePath = getUniqueFilePath(folder, "fullscreen_screenshot", extension);
+    if (!capture.pixmap.save(savePath)) {
+        qWarning() << "Failed to save fullscreen screenshot to" << savePath;
+        return;
+    }
+
+    emit fullscreenSaved(savePath);
 }
 
 void MainWindow::handleHotkeyActivated(size_t id) {
@@ -89,7 +101,6 @@ void MainWindow::handleHotkeyActivated(size_t id) {
 }
 
 void MainWindow::handleScreenshotClosed() {
-    qDebug() << "handleScreenshotClosed";
     isScreenshotDisplayed = false;
     if (screenshotDisplay) {
         screenshotDisplay->deleteLater();

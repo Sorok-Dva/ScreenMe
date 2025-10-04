@@ -9,9 +9,6 @@
   <a href="https://github.com/Sorok-Dva/ScreenMe/releases">
     <img src="https://img.shields.io/github/downloads/Sorok-Dva/ScreenMe/total.svg?style=for-the-badge" alt="Total downloads">
   </a>
-  <!--<a href="https://shields.io/community#sponsors" alt="Sponsors">
-    <img src="https://img.shields.io/opencollective/sponsors/Sorok-Dva.svg?style=for-the-badge" />
-  </a>-->
   <a href="https://github.com/Sorok-Dva/ScreenMe/pulse" alt="Activity">
     <img src="https://img.shields.io/github/commit-activity/m/Sorok-Dva/ScreenMe.svg?style=for-the-badge" />
   </a>
@@ -25,120 +22,117 @@
   <a href="https://patreon.com/sorokdva">
     <img src="https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white" alt="Support Me on Patreon">
   </a>
-
-
 </div>
 
-# ScreenMe - Screenshot Tool
+# ScreenMe – Build & Deploy Guide
 
-ScreenMe is a simple screenshot tool built with C++ and Qt. It allows users to take screenshots and save them with auto-incremented filenames. The tool includes a system tray icon for easy access to the screenshot functionality and configurable hotkeys.
-ScreenMe is designed for capturing, managing, and sharing screenshots efficiently. The application provides a range of functionalities to enhance the screenshot experience, from hotkey configurations to a built-in editor for annotating screenshots.
+ScreenMe is a Qt-based screenshot tool with a floating annotation editor, multi-monitor selection, and optional cloud sync.
 
-A website is available to register user captures online: [ScreenMe Website](https://screen-me.cloud).
+---
 
-### Why ScreenMe?
-ScreenMe was created because of security concerns with Lightshot. There have been security vulnerabilities in Lightshot that allow anyone to view screenshots from other users. ScreenMe addresses this issue with robust privacy settings that ensure only you control who sees your screenshots.
+## 1. Develop & Build
 
-Additionally, Lightshot has issues with Facebook login, resulting in users losing access to their galleries. ScreenMe offers reliable tools to migrate your screenshots from Lightshot to ScreenMe.
+### 1.1 Clone
+```bash
+git clone https://github.com/Sorok-Dva/ScreenMe.git
+cd ScreenMe
+```
 
-## Features
+### 1.2 Qt Requirements
+- Qt 5.15+ or Qt 6.5+ (Widgets, Network, WebSockets)
+- C++17-capable compiler
+- Optional but recommended: Qt Creator
 
-- Capture full screen or selected area screenshots
-- Annotate screenshots with text, shapes, and drawing tools
-- Save screenshots in multiple formats (PNG, JPEG)
-- Hotkey support for quick access to screenshot functionalities
-- System tray integration for easy access
-- Online synchronization of screenshots (requires login)
-- Configurable options for image quality and file saving
+#### Windows
+Install Qt (MinGW or MSVC) with the Qt Maintenance Tool. Add CMake/Ninja if you prefer a CMake workflow.
 
-## Installation
+#### macOS
+Install via Homebrew:
+```bash
+brew install qt
+```
+Set `QT_HOME=/usr/local/opt/qt` (or `/opt/homebrew/opt/qt` on Apple Silicon) and ensure `qmake`/`cmake` are on `PATH`.
 
-### Prerequisites
+### 1.3 Build with qmake (default project)
+```bash
+qmake ScreenMe.pro
+make          # or `nmake` on MSVC, `jom` on Windows with Qt tools
+```
+Outputs land in `./release` (MSVC) or the local directory (Unix).
 
-- Qt 5.12 or later
-- CMake 3.10 or later
+### 1.4 Build with CMake (optional)
+```bash
+cmake -S . -B build -DCMAKE_PREFIX_PATH="${QT_HOME}"
+cmake --build build --config Release
+```
+> If Qt was installed via the official installer, point `CMAKE_PREFIX_PATH` to `<Qt>/5.15.2/msvc2019_64` (or equivalent).
 
-### Building the Project
+---
 
-1. Clone the repository:
-    ```sh
-    git clone https://github.com/Sorok-Dva/ScreenMe.git
-    cd ScreenMe
-    ```
+## 2. Platform Notes
 
-2. Open the project in Qt Creator or your preferred IDE.
+### 2.1 macOS
+- `ScreenMe.pro` now sets `CONFIG += app_bundle` and links Carbon/ApplicationServices. Running `make` produces `ScreenMe.app`.
+- Screenshots use the macOS capture API via Qt’s `QScreen::grabWindow`. Hotkeys rely on Qt’s event filters (no Carbon shortcut capture yet).
+- Auto-start is disabled by default. To enable login launch: copy `ScreenMe.app` to `/Applications`, run `osx/set-login-item.sh` (to be delivered) or use `launchctl` manually.
 
-3. Build and run the project.
+### 2.2 Windows
+- System tray integration, global hotkeys, and auto-start run natively.
+- `config.json` lives in `%APPDATA%/ScreenMe/` by default (Qt `AppDataLocation`).
+- Build generates `ScreenMe.exe`; use `windeployqt ScreenMe.exe` (from the Qt bin folder) to gather dependent Qt DLLs.
 
-## Usage
+---
 
-### Starting the Application
+## 3. Packaging & Deployment
 
-Launch the application by running the `ScreenMe` executable. The application will minimize to the system tray, where you can access its functionalities by right-clicking the tray icon.
+### 3.1 Windows Installer (MSI/EXE)
+1. Build Release (`nmake release` or Visual Studio).
+2. Deploy Qt DLLs: `windeployqt --release ScreenMe.exe`.
+3. Bundle resources: ensure `resources/` and `icons/` are copied next to the EXE. If using an installer (NSIS/InnoSetup/WiX), include:
+   - `ScreenMe.exe`
+   - `Qt5Core.dll`, `Qt5Gui.dll`, `Qt5Widgets.dll`, `Qt5Network.dll`, `Qt5WebSockets.dll`
+   - `platforms/qwindows.dll`
+   - `imageformats/` plug-ins if PNG/JPEG support is missing (usually automatic)
 
-### Taking Screenshots
+4. Optional: Sign the executable, build an MSI via WiX Toolset.
 
-- **Take Screenshot**: Use the configured hotkey to capture a screenshot of the selected area.
-- **Take Fullscreen Screenshot**: Use the configured hotkey to capture a fullscreen screenshot.
+### 3.2 macOS Bundle (.app)
+1. Build Release (`qmake`, `make`).
+2. Run `macdeployqt ScreenMe.app` to embedded frameworks/plugins.
+3. Sign and notarize (optional but recommended for Gatekeeper).
+4. Zip the `.app` or create a `.dmg` (e.g., `hdiutil create ScreenMe.dmg -srcfolder ScreenMe.app`).
 
-### Editing Screenshots
+---
 
-After capturing a screenshot, the built-in editor allows you to:
-- Draw shapes (rectangle, ellipse, line, arrow)
-- Add text
-- Undo and redo actions
-- Save or copy the edited screenshot
+## 4. Configuration & Assets
 
-### Options
+- `resources/config.json`: default settings for save path, image quality, etc.
+- `icons.qrc` bundl es toolbar icons and the app icon.
+- Login info persists in `login_info.json` (Qt `AppDataLocation`).
 
-Access the options window through the system tray menu to configure:
-- Hotkeys for taking screenshots
-- Default save folder
-- Image quality and file format
+---
 
-### Online Synchronization
+## 5. Key Features Recap
+- Multi-screen aware area selection & editor overlay
+- Tailwind-inspired floating editor with tooltip-only action buttons
+- Windows global hotkeys (macOS uses inline key capture)
+- Uploads to `https://screen.sorokdva.eu`
 
-To upload and synchronize your screenshots online:
-1. Log in through the system tray menu.
-2. After logging in, your screenshots will be uploaded automatically.
-3. Visit [ScreenMe Website](https://screen-me.cloud) to view and manage your screenshots.
+---
 
-## Configuration
+## 6. Troubleshooting
 
-The configuration file `config.json` is located in the `resources` directory. It includes the following settings:
+| Issue | Fix |
+|-------|-----|
+| `Qt5*.dll` missing at runtime (Win) | Run `windeployqt ScreenMe.exe` |
+| Bundle won’t launch on macOS | Ensure `macdeployqt ScreenMe.app` ran; check Gatekeeper logs |
+| Hotkeys don’t fire on macOS | Hotkeys fall back to Qt key events. Ensure the options dialog has focus when recording |
+| Multi-monitor capture off-by-one | Qt 5.9 or lower may lack detected scaling. Upgrade to Qt 5.12+ |
 
-- `screenshot_hotkey`: Hotkey for taking a screenshot.
-- `fullscreen_hotkey`: Hotkey for taking a fullscreen screenshot.
-- `file_extension`: Default file extension for screenshots (e.g., png, jpg).
-- `image_quality`: Image quality for screenshots.
-- `default_save_folder`: Default folder to save screenshots.
-- `start_with_system`: Option to start the application with the system.
+---
 
-## Contributing
+## 7. Contributing & Support
 
-Contributions are welcome ! If you would like to contribute to this project, please follow these steps:
+Contributions welcome! Fork, branch, PR as usual. Bug reports via [GitHub Issues](https://github.com/Sorok-Dva/ScreenMe/issues). For commercial support, open a ticket or reach out to the maintainer.
 
-1. Fork the repository.
-2. Create a new branch with your feature or bug fix.
-3. Commit your changes.
-4. Push to the branch.
-5. Create a pull request.
-
-## Acknowledgments
-
-- Developed by [Сорок два](https://github.com/Sorok-Dva). All rights reserved.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Contributors
-
-<a href="https://github.com/sorok-dva/screenMe/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=sorok-dva/screenMe" />
-</a>
-
-## Contact
-
-For any inquiries or feedback, please visit our [GitHub Repository](https://github.com/Sorok-Dva/ScreenMe) or contact the developers directly.
-
+Happy capturing ✨

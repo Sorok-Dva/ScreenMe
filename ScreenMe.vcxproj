@@ -38,12 +38,12 @@
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
     <QtInstall>6.7.2_msvc2019_64</QtInstall>
-    <QtModules>axcontainer;axserver;designer;3dcore;3danimation;3dextras;3dinput;3dlogic;3drender;charts;core;datavisualization;dbus;coap;mqtt;opcua;gui;help;multimedia;multimediawidgets;network;networkauth;nfc;opengl;quick;3dquick;quickcontrols2;quickdialogs2;quicklayouts;quickwidgets;uiplugin;uitools;websockets;widgets</QtModules>
+    <QtModules>core;gui;widgets;network;websockets;printsupport</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
     <QtInstall>6.7.2_msvc2019_64</QtInstall>
-    <QtModules>axcontainer;axserver;designer;3dcore;3danimation;3dextras;3dinput;3dlogic;3drender;charts;core;datavisualization;dbus;coap;mqtt;opcua;gui;help;multimedia;multimediawidgets;network;networkauth;nfc;opengl;quick;3dquick;quickcontrols2;quickdialogs2;quicklayouts;quickwidgets;uiplugin;uitools;websockets;widgets</QtModules>
+    <QtModules>core;gui;widgets;network;websockets;printsupport</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
@@ -122,6 +122,8 @@
     </ClCompile>
     <ClCompile Include="src\ukeysequence.cpp" />
     <ClCompile Include="src\utils.cpp" />
+    <ClCompile Include="src\credits_dialog.cpp" />
+    <ClCompile Include="src\simpletranslator.cpp" />
     <ClCompile Include="main.cpp">
       <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">input</DynamicSource>
       <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Filename).moc</QtMocFileName>
@@ -151,6 +153,8 @@
     <QtMoc Include="include\uglobalhotkeys.h" />
     <ClInclude Include="include\utils.h" />
     <QtMoc Include="include\options_window.h" />
+    <QtMoc Include="include\credits_dialog.h" />
+    <ClInclude Include="include\simpletranslator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ScreenMe.pro" />

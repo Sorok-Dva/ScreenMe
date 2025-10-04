@@ -4,6 +4,8 @@
 #include <QScreen>
 #include <QApplication>
 #include <QPixmap>
+#include <QPainter>
+#include <QGuiApplication>
 #include <QDebug>
 #include <QFile>
 #include <QJsonDocument>
@@ -37,19 +39,64 @@ QString getConfigFilePath(const QString& file) {
     return dir.filePath(file);
 }
 
-void CaptureScreenshot(const QString& savePath) {
-    QScreen* screen = QGuiApplication::primaryScreen();
-    if (!screen) {
-        qDebug() << "No primary screen found";
-        return;
+DesktopCapture captureEntireDesktop() {
+    DesktopCapture capture;
+    const QList<QScreen*> screens = QGuiApplication::screens();
+    if (screens.isEmpty()) {
+        qWarning() << "No screens detected";
+        return capture;
     }
-    QPixmap originalPixmap = screen->grabWindow(0);
-    originalPixmap.save(savePath);
+
+    QRect totalGeometry = screens.first()->geometry();
+    for (int i = 1; i < screens.size(); ++i) {
+        totalGeometry = totalGeometry.united(screens.at(i)->geometry());
+    }
+
+    if (!totalGeometry.isValid()) {
+        qWarning() << "Combined screen geometry is invalid";
+        return capture;
+    }
+
+    QPixmap desktopPixmap(totalGeometry.size());
+    desktopPixmap.fill(Qt::transparent);
+
+    QPainter painter(&desktopPixmap);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+    for (QScreen* screen : screens) {
+        const QRect screenGeometry = screen->geometry();
+        const QPoint offset = screenGeometry.topLeft() - totalGeometry.topLeft();
+        QPixmap screenPixmap = screen->grabWindow(0);
+        const qreal dpr = screenPixmap.devicePixelRatio();
+        const QSizeF logicalSize = QSizeF(screenPixmap.size()) / dpr;
+        const QRectF targetRect(QPointF(offset), logicalSize);
+        painter.drawPixmap(targetRect, screenPixmap, QRectF(QPointF(0, 0), QSizeF(screenPixmap.size())));
+    }
+
+    painter.end();
+    desktopPixmap.setDevicePixelRatio(1.0);
+
+    capture.pixmap = desktopPixmap;
+    capture.geometry = totalGeometry;
+    return capture;
 }
 
-void displayScreenshotOnScreen(const QPixmap& pixmap) {
-    ScreenshotDisplay* displayWidget = new ScreenshotDisplay(pixmap);
-    displayWidget->setGeometry(QApplication::primaryScreen()->geometry());
+void CaptureScreenshot(const QString& savePath) {
+    const DesktopCapture capture = captureEntireDesktop();
+    if (!capture.isValid()) {
+        qWarning() << "Unable to capture desktop";
+        return;
+    }
+    capture.pixmap.save(savePath);
+}
+
+void displayScreenshotOnScreen(const QPixmap& pixmap, const QRect& geometry) {
+    ScreenshotDisplay* displayWidget = new ScreenshotDisplay(pixmap, geometry);
+    if (geometry.isValid()) {
+        displayWidget->setGeometry(geometry);
+    } else {
+        displayWidget->resize(pixmap.size());
+    }
     displayWidget->show();
 }
 
@@ -86,14 +133,18 @@ void clearLoginInfo() {
 
 
 void setAutoStart(bool enable) {
+#ifdef Q_OS_WIN
     QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
 
     if (enable) {
-        QString applicationName = QApplication::applicationName();
-        QString applicationPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
+        const QString applicationName = QApplication::applicationName();
+        const QString applicationPath = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
         settings.setValue(applicationName, applicationPath);
     }
     else {
         settings.remove(QApplication::applicationName());
     }
+#else
+    Q_UNUSED(enable);
+#endif
 }

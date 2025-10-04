@@ -1,5 +1,9 @@
 #include <QtCore>
+#include <limits>
 #if defined(Q_OS_WIN)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
 #elif defined(Q_OS_LINUX)
 #include <QWindow>
@@ -69,7 +73,16 @@ void UGlobalHotkeys::registerHotkey(const UKeySequence& keySeq, size_t id) {
         }
     }
 
-    if (!RegisterHotKey((HWND)winId(), id, winMod, key)) {
+    if (id > static_cast<size_t>(std::numeric_limits<int>::max())) {
+        qWarning() << "Hotkey identifier exceeds WinAPI range";
+        return;
+    }
+
+    const UINT hotkeyMods = static_cast<UINT>(winMod);
+    const UINT hotkeyKey = static_cast<UINT>(key);
+    const int hotkeyId = static_cast<int>(id);
+
+    if (!RegisterHotKey(reinterpret_cast<HWND>(winId()), hotkeyId, hotkeyMods, hotkeyKey)) {
         qDebug() << "Error activating hotkey!";
     } else {
         Registered.insert(id);
@@ -106,7 +119,9 @@ void UGlobalHotkeys::unregisterHotkey(size_t id) {
     Q_ASSERT(Registered.find(id) != Registered.end() && "Unregistered hotkey");
     #endif
     #if defined(Q_OS_WIN)
-    UnregisterHotKey((HWND)winId(), id);
+    if (id <= static_cast<size_t>(std::numeric_limits<int>::max())) {
+        UnregisterHotKey(reinterpret_cast<HWND>(winId()), static_cast<int>(id));
+    }
     #elif defined(Q_OS_LINUX)
     unregLinuxHotkey(id);
     #endif
@@ -134,7 +149,9 @@ void UGlobalHotkeys::unregisterAllHotkeys()
 UGlobalHotkeys::~UGlobalHotkeys() {
     #if defined(Q_OS_WIN)
     for (QSet<size_t>::iterator i = Registered.begin(); i != Registered.end(); i++) {
-        UnregisterHotKey((HWND)winId(), *i);
+        if (*i <= static_cast<size_t>(std::numeric_limits<int>::max())) {
+            UnregisterHotKey(reinterpret_cast<HWND>(winId()), static_cast<int>(*i));
+        }
     }
     #elif defined(Q_OS_LINUX)
     xcb_key_symbols_free(X11KeySymbs);

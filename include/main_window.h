@@ -5,9 +5,10 @@
 #include <QNetworkReply>
 #include <QJsonObject>
 #include <QPointer>
+#include <QString>
 #include "screenshotdisplay.h"
 #include "config_manager.h"
-#include "UGlobalHotkeys.h"
+#include "uglobalhotkeys.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -29,6 +30,7 @@ public:
 
 signals:
     void screenshotClosed();
+    void fullscreenSaved(const QString& path);
 
 private:
     QPointer<ScreenshotDisplay> screenshotDisplay;

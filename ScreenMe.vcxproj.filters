@@ -29,6 +29,12 @@
     <ClCompile Include="src\options_window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\credits_dialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\simpletranslator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\screenshotdisplay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -74,6 +80,9 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="include\options_window.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="include\credits_dialog.h">
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="include\screenshotdisplay.h">
@@ -126,6 +135,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\uglobal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\simpletranslator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">

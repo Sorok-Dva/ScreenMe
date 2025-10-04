@@ -2,7 +2,7 @@
 
 #include <QWidget>
 #include "config_manager.h"
-#include "UGlobalHotkeys.h"
+#include "uglobalhotkeys.h"
 
 class MainWindow : public QWidget {
     Q_OBJECT

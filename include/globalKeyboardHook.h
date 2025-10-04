@@ -2,14 +2,16 @@
 #define GLOBALKEYBOARDHOOK_H
 
 #include <QObject>
-#include <Windows.h>
 #include <QKeySequence>
+
+#ifdef Q_OS_WIN
+#include <Windows.h>
 
 class GlobalKeyboardHook : public QObject {
     Q_OBJECT
 
 public:
-    GlobalKeyboardHook(QObject* parent = nullptr);
+    explicit GlobalKeyboardHook(QObject* parent = nullptr);
     ~GlobalKeyboardHook();
 
     void start();
@@ -25,5 +27,22 @@ private:
     QKeySequence currentSequence;
     Qt::KeyboardModifiers modifiers;
 };
+#else
+
+class GlobalKeyboardHook : public QObject {
+    Q_OBJECT
+
+public:
+    explicit GlobalKeyboardHook(QObject* parent = nullptr) : QObject(parent) {}
+    ~GlobalKeyboardHook() override = default;
+
+    void start() {}
+    void stop() {}
+
+signals:
+    void keyPressed(QKeySequence keySequence);
+};
+
+#endif // Q_OS_WIN
 
 #endif // GLOBALKEYBOARDHOOK_H
